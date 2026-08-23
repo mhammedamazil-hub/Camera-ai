@@ -1,0 +1,2348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Jarvis AI - Advanced Computer Vision System">
+    <meta name="theme-color" content="#030712">
+    <title>Jarvis AI | Advanced Computer Vision System</title>
+
+    <!-- TensorFlow.js COCO-SSD for Object Detection -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js"></script>
+
+    <style>
+        /* ============================================
+           JARVIS AI - CSS VARIABLES & THEME CONFIG
+           ============================================ */
+        :root {
+            --bg-primary: #030712;
+            --bg-secondary: #0b1329;
+            --bg-tertiary: #111827;
+            --neon-cyan: #00f0ff;
+            --neon-cyan-dim: rgba(0, 240, 255, 0.3);
+            --neon-cyan-glow: rgba(0, 240, 255, 0.6);
+            --electric-orange: #ff6b35;
+            --electric-orange-dim: rgba(255, 107, 53, 0.3);
+            --electric-orange-glow: rgba(255, 107, 53, 0.6);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-cyan: #00f0ff;
+            --text-orange: #ff6b35;
+            --border-cyan: rgba(0, 240, 255, 0.4);
+            --border-orange: rgba(255, 107, 53, 0.4);
+            --font-mono: 'Courier New', 'Consolas', 'Monaco', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --scanline-opacity: 0.03;
+            --hud-grid-color: rgba(0, 240, 255, 0.07);
+        }
+
+        /* ============================================
+           GLOBAL RESET & BASE STYLES
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+        }
+
+        /* ============================================
+           SCANLINE OVERLAY EFFECT
+           ============================================ */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.15) 2px,
+                rgba(0, 0, 0, 0.15) 4px
+            );
+        }
+
+        /* ============================================
+           BACKGROUND GRID PATTERN (HUD)
+           ============================================ */
+        .hud-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            background-image:
+                linear-gradient(var(--hud-grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--hud-grid-color) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.5;
+        }
+
+        /* ============================================
+           CORNER DECORATIONS - SCI-FI FRAME
+           ============================================ */
+        .hud-corner {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            z-index: 998;
+            pointer-events: none;
+        }
+
+        .hud-corner.top-left {
+            top: 20px;
+            left: 20px;
+            border-top: 2px solid var(--neon-cyan);
+            border-left: 2px solid var(--neon-cyan);
+            box-shadow: -4px -4px 10px var(--neon-cyan-dim);
+        }
+
+        .hud-corner.top-right {
+            top: 20px;
+            right: 20px;
+            border-top: 2px solid var(--neon-cyan);
+            border-right: 2px solid var(--neon-cyan);
+            box-shadow: 4px -4px 10px var(--neon-cyan-dim);
+        }
+
+        .hud-corner.bottom-left {
+            bottom: 20px;
+            left: 20px;
+            border-bottom: 2px solid var(--neon-cyan);
+            border-left: 2px solid var(--neon-cyan);
+            box-shadow: -4px 4px 10px var(--neon-cyan-dim);
+        }
+
+        .hud-corner.bottom-right {
+            bottom: 20px;
+            right: 20px;
+            border-bottom: 2px solid var(--neon-cyan);
+            border-right: 2px solid var(--neon-cyan);
+            box-shadow: 4px 4px 10px var(--neon-cyan-dim);
+        }
+
+        /* ============================================
+           JARVIS CORE VISUALIZER (PULSING RING)
+           ============================================ */
+        .jarvis-core {
+            position: fixed;
+            top: 50px;
+            right: 50px;
+            width: 80px;
+            height: 80px;
+            z-index: 997;
+            pointer-events: none;
+        }
+
+        .jarvis-core-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            border: 2px solid var(--neon-cyan);
+            border-radius: 50%;
+            box-shadow:
+                0 0 20px var(--neon-cyan-dim),
+                0 0 40px var(--neon-cyan-dim),
+                inset 0 0 20px var(--neon-cyan-dim);
+            animation: pulse-ring 2s ease-in-out infinite;
+        }
+
+        .jarvis-core-ring.active {
+            border-color: var(--electric-orange);
+            box-shadow:
+                0 0 20px var(--electric-orange-dim),
+                0 0 40px var(--electric-orange-dim),
+                inset 0 0 20px var(--electric-orange-dim);
+            animation: pulse-ring-active 1s ease-in-out infinite;
+        }
+
+        .jarvis-core-inner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background: var(--neon-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 30px var(--neon-cyan);
+            animation: core-pulse 2s ease-in-out infinite;
+        }
+
+        .jarvis-core-inner.active {
+            background: var(--electric-orange);
+            box-shadow: 0 0 30px var(--electric-orange);
+        }
+
+        .jarvis-core-label {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-cyan);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            white-space: nowrap;
+        }
+
+        @keyframes pulse-ring {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+        }
+
+        @keyframes pulse-ring-active {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+        }
+
+        @keyframes core-pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(0.8); }
+        }
+
+        /* ============================================
+           SCANNING LINE ANIMATION
+           ============================================ */
+        .scanning-line {
+            position: fixed;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                var(--neon-cyan),
+                transparent
+            );
+            box-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan);
+            z-index: 996;
+            pointer-events: none;
+            opacity: 0.6;
+            animation: scan-down 4s linear infinite;
+        }
+
+        @keyframes scan-down {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* ============================================
+           CROSSHAIR TARGETING Reticle
+           ============================================ */
+        .crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            z-index: 995;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        .crosshair::before,
+        .crosshair::after {
+            content: '';
+            position: absolute;
+            background: var(--neon-cyan);
+        }
+
+        .crosshair::before {
+            width: 1px;
+            height: 100%;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            box-shadow: -50px 0 0 var(--neon-cyan-dim), 50px 0 0 var(--neon-cyan-dim);
+        }
+
+        .crosshair::after {
+            width: 100%;
+            height: 1px;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            box-shadow: 0 -50px 0 var(--neon-cyan-dim), 0 50px 0 var(--neon-cyan-dim);
+        }
+
+        .crosshair-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--neon-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--neon-cyan-dim);
+        }
+
+        .crosshair-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 4px;
+            background: var(--neon-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        /* ============================================
+           MAIN LAYOUT - CAMERA CONTAINER
+           ============================================ */
+        .camera-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-primary);
+        }
+
+        .camera-frame {
+            position: relative;
+            width: min(95vw, 1200px);
+            height: min(80vh, 800px);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-cyan);
+            box-shadow:
+                0 0 30px var(--neon-cyan-dim),
+                inset 0 0 60px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        /* ============================================
+           CAMERA FEED CANVAS
+           ============================================ */
+        #camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* ============================================
+           VIDEO ELEMENT (Hidden)
+           ============================================ */
+        #video-element {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        /* ============================================
+           DETECTION CANVAS (Overlay)
+           ============================================ */
+        #detection-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        /* ============================================
+           STATUS BAR - TOP HUD
+           ============================================ */
+        .status-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            background: linear-gradient(180deg, rgba(11, 19, 41, 0.95) 0%, rgba(11, 19, 41, 0) 100%);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--border-cyan);
+            z-index: 100;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-item .label {
+            color: var(--text-cyan);
+        }
+
+        .status-item .value {
+            color: var(--text-primary);
+            min-width: 60px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--neon-cyan);
+            box-shadow: 0 0 10px var(--neon-cyan);
+            animation: dot-pulse 2s ease-in-out infinite;
+        }
+
+        .status-dot.offline {
+            background: var(--text-secondary);
+            box-shadow: none;
+            animation: none;
+        }
+
+        @keyframes dot-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* ============================================
+           DATA PANEL - RIGHT SIDE
+           ============================================ */
+        .data-panel {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            width: 220px;
+            background: rgba(11, 19, 41, 0.9);
+            border: 1px solid var(--border-cyan);
+            padding: 15px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .data-panel-title {
+            color: var(--text-cyan);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-cyan);
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            color: var(--text-secondary);
+        }
+
+        .data-row .data-label {
+            color: var(--text-cyan);
+        }
+
+        .data-row .data-value {
+            color: var(--text-primary);
+        }
+
+        /* ============================================
+           DETECTION LIST PANEL
+           ============================================ */
+        .detection-list {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            width: 250px;
+            max-height: 200px;
+            background: rgba(11, 19, 41, 0.9);
+            border: 1px solid var(--border-cyan);
+            padding: 15px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            z-index: 100;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .detection-list-title {
+            color: var(--text-cyan);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-cyan);
+        }
+
+        .detection-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+        }
+
+        .detection-item:last-child {
+            border-bottom: none;
+        }
+
+        .detection-item .class-name {
+            color: var(--text-primary);
+        }
+
+        .detection-item .confidence {
+            color: var(--neon-cyan);
+        }
+
+        .detection-item .confidence.high {
+            color: var(--electric-orange);
+        }
+
+        /* ============================================
+           JARVIS SPEECH DISPLAY
+           ============================================ */
+        .jarvis-speech {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(80%, 600px);
+            background: rgba(11, 19, 41, 0.95);
+            border: 1px solid var(--border-orange);
+            padding: 15px 20px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--text-orange);
+            text-align: center;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s ease, border-color 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .jarvis-speech.visible {
+            opacity: 1;
+            border-color: var(--electric-orange);
+            box-shadow: 0 0 30px var(--electric-orange-dim);
+        }
+
+        .jarvis-speech::before {
+            content: '>';
+            color: var(--electric-orange);
+            margin-right: 10px;
+            animation: blink-cursor 1s step-end infinite;
+        }
+
+        @keyframes blink-cursor {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .jarvis-speech .timestamp {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        /* ============================================
+           CONTROLS PANEL
+           ============================================ */
+        .controls-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .ctrl-btn {
+            background: rgba(11, 19, 41, 0.9);
+            border: 1px solid var(--border-cyan);
+            color: var(--text-cyan);
+            padding: 10px 15px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .ctrl-btn:hover {
+            background: rgba(0, 240, 255, 0.1);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 15px var(--neon-cyan-dim);
+        }
+
+        .ctrl-btn:active {
+            transform: scale(0.95);
+        }
+
+        .ctrl-btn.active {
+            background: rgba(255, 107, 53, 0.1);
+            border-color: var(--electric-orange);
+            color: var(--text-orange);
+            box-shadow: 0 0 15px var(--electric-orange-dim);
+        }
+
+        .ctrl-btn.danger:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+        }
+
+        /* ============================================
+           LOADING SCREEN
+           ============================================ */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-title {
+            font-family: var(--font-mono);
+            font-size: 24px;
+            color: var(--text-cyan);
+            margin-bottom: 30px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .loading-progress {
+            width: 300px;
+            height: 4px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-cyan);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loading-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--electric-orange));
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .loading-status {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 20px;
+            letter-spacing: 1px;
+        }
+
+        .loading-status .highlight {
+            color: var(--text-cyan);
+        }
+
+        /* ============================================
+           ERROR CARD
+           ============================================ */
+        .error-card {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: min(90%, 500px);
+            background: rgba(11, 19, 41, 0.98);
+            border: 1px solid #ef4444;
+            padding: 40px;
+            z-index: 3000;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 0 60px rgba(239, 68, 68, 0.2);
+        }
+
+        .error-card.hidden {
+            display: none;
+        }
+
+        .error-card .error-icon {
+            font-size: 48px;
+            color: #ef4444;
+            margin-bottom: 20px;
+        }
+
+        .error-card .error-title {
+            font-family: var(--font-mono);
+            font-size: 18px;
+            color: #ef4444;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+
+        .error-card .error-message {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .error-card .error-details {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-cyan);
+            background: rgba(0, 240, 255, 0.05);
+            padding: 10px;
+            border: 1px solid var(--border-cyan);
+            margin-bottom: 20px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .error-card .error-action {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            padding: 12px 20px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .error-card .error-action:hover {
+            background: rgba(239, 68, 68, 0.2);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+        }
+
+        /* ============================================
+           BOUNDING BOX STYLES (Canvas rendered)
+           Canvas context styling applied via JS
+           ============================================ */
+
+        /* ============================================
+           RESPONSIVE ADJUSTMENTS
+           ============================================ */
+        @media (max-width: 768px) {
+            .data-panel {
+                display: none;
+            }
+
+            .detection-list {
+                width: 180px;
+                font-size: 10px;
+                left: 10px;
+                bottom: 70px;
+            }
+
+            .status-item {
+                font-size: 9px;
+            }
+
+            .jarvis-core {
+                top: 20px;
+                right: 20px;
+                width: 60px;
+                height: 60px;
+            }
+
+            .hud-corner {
+                width: 40px;
+                height: 40px;
+            }
+
+            .hud-corner.top-left,
+            .hud-corner.top-right {
+                top: 10px;
+            }
+
+            .hud-corner.bottom-left,
+            .hud-corner.bottom-right {
+                bottom: 10px;
+            }
+
+            .controls-panel {
+                bottom: 10px;
+                right: 10px;
+            }
+
+            .ctrl-btn {
+                padding: 8px 12px;
+                font-size: 10px;
+            }
+
+            .jarvis-speech {
+                font-size: 11px;
+                width: 90%;
+                padding: 12px 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .crosshair {
+                display: none;
+            }
+
+            .detection-list {
+                width: 140px;
+                font-size: 9px;
+                max-height: 150px;
+            }
+
+            .status-bar {
+                height: 40px;
+            }
+
+            .loading-title {
+                font-size: 18px;
+            }
+        }
+
+        /* ============================================
+           SCROLLBAR STYLING
+           ============================================ */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--neon-cyan-dim);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--neon-cyan);
+        }
+
+        /* ============================================
+           SELECTION STYLING
+           ============================================ */
+        ::selection {
+            background: var(--neon-cyan);
+            color: var(--bg-primary);
+        }
+    </style>
+</head>
+<body>
+    <!-- ============================================
+         SCANLINE OVERLAY
+         ============================================ -->
+    <div class="scanlines"></div>
+
+    <!-- ============================================
+         HUD GRID BACKGROUND
+         ============================================ -->
+    <div class="hud-grid"></div>
+
+    <!-- ============================================
+         CORNER DECORATIONS
+         ============================================ -->
+    <div class="hud-corner top-left"></div>
+    <div class="hud-corner top-right"></div>
+    <div class="hud-corner bottom-left"></div>
+    <div class="hud-corner bottom-right"></div>
+
+    <!-- ============================================
+         JARVIS CORE VISUALIZER
+         ============================================ -->
+    <div class="jarvis-core" id="jarvis-core">
+        <div class="jarvis-core-ring" id="core-ring"></div>
+        <div class="jarvis-core-inner" id="core-inner"></div>
+        <div class="jarvis-core-label">Jarvis Core</div>
+    </div>
+
+    <!-- ============================================
+         SCANNING LINE
+         ============================================ -->
+    <div class="scanning-line"></div>
+
+    <!-- ============================================
+         CROSSHAIR RETICLE
+         ============================================ -->
+    <div class="crosshair">
+        <div class="crosshair-ring"></div>
+        <div class="crosshair-center"></div>
+    </div>
+
+    <!-- ============================================
+         LOAD SCREEN
+         ============================================ -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-title">Initializing Jarvis</div>
+        <div class="loading-progress">
+            <div class="loading-progress-bar" id="loading-bar"></div>
+        </div>
+        <div class="loading-status" id="loading-status">
+            <span id="loading-text">Loading system modules...</span>
+        </div>
+    </div>
+
+    <!-- ============================================
+         ERROR CARD
+         ============================================ -->
+    <div class="error-card hidden" id="error-card">
+        <div class="error-icon">⚠</div>
+        <div class="error-title">System Access Denied</div>
+        <div class="error-message" id="error-message">
+            Cannot access camera feed. Please ensure you have granted camera permissions and that a webcam is connected to your device.
+        </div>
+        <div class="error-details" id="error-details"></div>
+        <button class="error-action" id="error-dismiss">Dismiss & Retry</button>
+    </div>
+
+    <!-- ============================================
+         MAIN CAMERA CONTAINER
+         ============================================ -->
+    <div class="camera-container">
+        <div class="camera-frame">
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="status-dot" id="status-dot"></div>
+                    <span class="label">System:</span>
+                    <span class="value" id="system-status">Online</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">FPS:</span>
+                    <span class="value" id="fps-display">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Objects:</span>
+                    <span class="value" id="object-count">0</span>
+                </div>
+                <div class="status-item" style="margin-left: auto;">
+                    <span class="label">Model:</span>
+                    <span class="value">COCO-SSD</span>
+                </div>
+            </div>
+
+            <!-- Video Element (Hidden, feeds to canvas) -->
+            <video id="video-element" autoplay playsinline muted></video>
+
+            <!-- Detection Canvas (Overlay) -->
+            <canvas id="detection-canvas"></canvas>
+
+            <!-- Data Panel (Right Side) -->
+            <div class="data-panel" id="data-panel">
+                <div class="data-panel-title">System Diagnostics</div>
+                <div class="data-row">
+                    <span class="data-label">Resolution:</span>
+                    <span class="data-value" id="resolution-display">--</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Device:</span>
+                    <span class="data-value" id="device-display">--</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Latency:</span>
+                    <span class="data-value" id="latency-display">--</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Inference:</span>
+                    <span class="data-value" id="inference-display">--</span>
+                </div>
+            </div>
+
+            <!-- Detection List (Bottom Left) -->
+            <div class="detection-list" id="detection-list">
+                <div class="detection-list-title">Target Signatures</div>
+                <div id="detection-items"></div>
+            </div>
+
+            <!-- Jarvis Speech Display -->
+            <div class="jarvis-speech" id="jarvis-speech">
+                <span id="speech-text"></span>
+                <div class="timestamp" id="speech-timestamp"></div>
+            </div>
+
+            <!-- Controls Panel -->
+            <div class="controls-panel">
+                <button class="ctrl-btn active" id="btn-toggle">Pause</button>
+                <button class="ctrl-btn" id="btn-toggle-audio">Audio Off</button>
+                <button class="ctrl-btn danger" id="btn-retry">Reboot</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         JAVASCRIPT - JARVIS CORE ENGINE
+         ============================================ -->
+    <script>
+        /**
+         * JARVIS AI - Advanced Computer Vision System
+         * A fully client-side, single-file implementation
+         * 
+         * Features:
+         * - TensorFlow.js COCO-SSD object detection
+         * - Web Speech API voice synthesis
+         * - Sci-Fi HUD interface
+         * - Intelligent quip system with throttling
+         * - Optional LLM integration template
+         */
+
+        // ============================================
+        // CONFIGURATION & CONSTANTS
+        // ============================================
+        const CONFIG = {
+            // Speech throttling (milliseconds between vocal responses)
+            SPEECH_COOLDOWN: 12000, // 12 seconds minimum between quips
+
+            // Detection confidence threshold
+            CONFIDENCE_THRESHOLD: 0.45,
+
+            // Target frame rate (detections per second)
+            TARGET_FPS: 15,
+
+            // Canvas scaling factor for high-DPI displays
+            SCALE_FACTOR: 1.0,
+
+            // Non-max suppression threshold for overlapping boxes
+            NMS_THRESHOLD: 0.5,
+
+            // Maximum detections to display
+            MAX_DETECTIONS: 10
+        };
+
+        // ============================================
+        // JARVIS QUIP DICTIONARY
+        // British AI personality with contextual responses
+        // ============================================
+        const JARVIS_QUIPS = {
+            person: [
+                "Welcome back, sir. Systems are nominal.",
+                "Scanning vitals. You look optimal today, sir.",
+                "Human lifeform detected. All biometrics within normal parameters.",
+                "Good to see you, sir. Shall I initiate morning protocols?",
+                "Identity confirmed. Welcome to the workspace, sir.",
+                "Human subject in view. No hostile intent detected.",
+                "The presence you've been waiting for. You, sir."
+            ],
+            car: [
+                "Automotive vehicle identified. Registration unknown.",
+                "Transportation unit detected. Fuel efficiency: substandard.",
+                "Vehicle signature confirmed. Shall I calculate optimal routing?",
+                "Internal combustion engine detected. How quaint.",
+                "Mobility platform acquired. Destination required, sir."
+            ],
+            cell phone: [
+                "Accessing encrypted cellular datalinks.",
+                "I strongly advise against checking notifications right now, sir.",
+                "Mobile communications device detected. Privacy protocols engaged.",
+                "The omnipresent rectangle of distraction. Shall I silence it?",
+                "Signal interference detected from portable communication unit."
+            ],
+            laptop: [
+                "Mainframe link established. Compiling local files.",
+                "Quantum computations initialized.",
+                "Portable computing unit detected. Shall I access encrypted archives?",
+                "Data processing terminal in view. Systems ready for input.",
+                "Laptop acquired. Connecting to secure network protocols."
+            ],
+            cup: [
+                "Beverage vessel detected. Contents: unknown.",
+                "Hydration unit identified. Caffeine probability: high.",
+                "Containment vessel for liquid substances. Handle orientation: ergonomic.",
+                "Drink container localized. Thermal status: indeterminate.",
+                "Sustenance apparatus detected. May I suggest hydration protocols?"
+            ],
+            keyboard: [
+                "Input interface detected. Ready for command entry, sir.",
+                "Mechanical typing apparatus acquired. Tactile feedback: optimal.",
+                "Text input terminal in view. Shall I prepare data entry protocols?",
+                "Keyboard identified. All keys operational. Awaiting your command, sir."
+            ],
+            mouse: [
+                "Pointing device detected. Cursor control initialized.",
+                "Navigation interface acquired. Precision calibrated.",
+                "Input tracking unit identified. Ready to assist with graphical operations."
+            ],
+            book: [
+                "Physical information storage medium detected.",
+                "Knowledge repository identified. Page count: unknown.",
+                "Written compilation of human knowledge acquired. Fascinating.",
+                "Printed matter detected. Shall I cross-reference its contents?"
+            ],
+            tv: [
+                "Visual display unit identified. Broadcast signal: inactive.",
+                "Entertainment display detected. Shall I stream preferred content?",
+                "Large format screen acquired. Resolution: adequate.",
+                "Display terminal in view. Status: awaiting input."
+            ],
+            bottle: [
+                "Containment vessel detected. Contents: unverified.",
+                "Sealed vessel identified. May contain liquid substances.",
+                "Bottle localized. Structural integrity: intact."
+            ],
+            chair: [
+                "Seating apparatus detected. Ergonomic rating: moderate.",
+                "Furniture unit for human support acquired.",
+                "Support structure identified. Comfort protocols: engaged.",
+                "Seating position available. Shall I adjust ambient lighting?"
+            ],
+            dining table: [
+                "Flat surface apparatus detected. Typically used for consumption.",
+                "Food preparation and consumption surface identified.",
+                "Tabletop surface acquired. Cleanliness status: unverified."
+            ],
+            refrigerator: [
+                "Temperature-controlled storage unit detected.",
+                "Cold storage apparatus acquired. Internal temperature: optimal.",
+                "Refrigeration unit identified. Contents: classified.",
+                "Preservation system detected. Energy consumption: within norms."
+            ],
+            clock: [
+                "Temporal measurement device detected. Timekeeping: accurate.",
+                "Chronometer identified. Current time: being noted, sir.",
+                "Time indicator acquired. Synchronization protocols: active."
+            ],
+            scissors: [
+                "Tool for cutting detected. Sharp edges: present.",
+                "Cutting implement acquired. Exercise caution, sir.",
+                "Bladed instrument identified. Safety protocols: recommended."
+            ],
+            toothbrush: [
+                "Personal hygiene instrument detected.",
+                "Dental care apparatus acquired. Usage: personal only.",
+                "Oral hygiene tool identified. Sanitation status: assumed adequate."
+            ],
+            refrigerators: [
+                "Temperature-controlled storage unit detected.",
+                "Cold storage apparatus acquired. Internal temperature: optimal."
+            ],
+            knife: [
+                "Bladed instrument detected. Sharp edges: present.",
+                "Cutting tool acquired. Handle grip: secure.",
+                "Kitchen implement identified. Safety protocols: engaged."
+            ],
+            Remote: [
+                "Control interface for external device detected.",
+                "Wireless command transmitter acquired. Signal strength: adequate.",
+                "Remote control identified. Battery status: unknown."
+            ],
+            book: [
+                "Physical information storage medium detected.",
+                "Knowledge repository identified."
+            ],
+            fork: [
+                "Utensil for food manipulation detected.",
+                "Eating implement acquired. Tines: intact.",
+                "Dining tool identified. Hygiene protocols: recommended."
+            ],
+            spoon: [
+                "Spoon detected.",
+                "Utensil for liquid consumption acquired."
+            ],
+            banana: [
+                "Fruit identified. Potassium content: high.",
+                "Edible produce detected. Ripeness: indeterminate.",
+                "Yellow curved fruit acquired. Nutritional value: excellent."
+            ],
+            apple: [
+                "Fruit detected. Variety: uncertain.",
+                "Round produce acquired. Color: red or green.",
+                "Apple identified. Core: present. Seeds: counted."
+            ]
+        };
+
+        // Generic fallback quips for unrecognized objects
+        const GENERIC_QUIPS = [
+            "Intriguing object localized, sir.",
+            "Analyzing target structure parameters.",
+            "Object signature acquired. Classification: pending.",
+            "Unknown entity detected. Running comprehensive analysis.",
+            "Visual data captured. Processing morphological features.",
+            "Target identified. Initiating detailed inspection protocol.",
+            "Object of interest acquired. Neural networks engaged.",
+            "Structure detected. Evaluating geometric properties.",
+            "New data point collected. Updating situational awareness.",
+            "Entity registered. Cross-referencing with known databases."
+        ];
+
+        // Greeting quips for start of session
+        const GREETING_QUIPS = [
+            "Systems online, sir. All modules operational.",
+            "Good day, sir. Ready to assist with your requirements.",
+            "Initialization complete. I remain at your service, sir.",
+            "Jarvis at your disposal. What are your orders?",
+            "All systems go, sir. Shall we begin our session?"
+        ];
+
+        // ============================================
+        // STATE MANAGEMENT
+        // ============================================
+        const state = {
+            isRunning: false,
+            isPaused: false,
+            isSpeaking: false,
+            hasCamera: false,
+            hasAudio: false,
+            model: null,
+            videoStream: null,
+            lastSpeechTime: 0,
+            lastDetectionTime: 0,
+            frameCount: 0,
+            fps: 0,
+            fpsLastFrame: 0,
+            detectedObjects: [],
+            detectionHistory: [],
+            voice: null,
+            audioContext: null,
+            animationId: null,
+            canvasWidth: 0,
+            canvasHeight: 0,
+            videoWidth: 0,
+            videoHeight: 0,
+            recentQuips: new Set()
+        };
+
+        // ============================================
+        // DOM ELEMENTS
+        // ============================================
+        const elements = {
+            video: document.getElementById('video-element'),
+            canvas: document.getElementById('detection-canvas'),
+            loadingScreen: document.getElementById('loading-screen'),
+            loadingBar: document.getElementById('loading-bar'),
+            loadingText: document.getElementById('loading-text'),
+            statusDot: document.getElementById('status-dot'),
+            systemStatus: document.getElementById('system-status'),
+            fpsDisplay: document.getElementById('fps-display'),
+            objectCount: document.getElementById('object-count'),
+            resolutionDisplay: document.getElementById('resolution-display'),
+            deviceDisplay: document.getElementById('device-display'),
+            latencyDisplay: document.getElementById('latency-display'),
+            inferenceDisplay: document.getElementById('inference-display'),
+            detectionItems: document.getElementById('detection-items'),
+            jarvisSpeech: document.getElementById('jarvis-speech'),
+            speechText: document.getElementById('speech-text'),
+            speechTimestamp: document.getElementById('speech-timestamp'),
+            btnToggle: document.getElementById('btn-toggle'),
+            btnToggleAudio: document.getElementById('btn-toggle-audio'),
+            btnRetry: document.getElementById('btn-retry'),
+            errorCard: document.getElementById('error-card'),
+            errorDismiss: document.getElementById('error-dismiss'),
+            errorMessage: document.getElementById('error-message'),
+            errorDetails: document.getElementById('error-details'),
+            coreRing: document.getElementById('core-ring'),
+            coreInner: document.getElementById('core-inner'),
+            jarvisCore: document.getElementById('jarvis-core')
+        };
+
+        // ============================================
+        // HELPER FUNCTIONS
+        // ============================================
+
+        /**
+         * Update loading screen progress
+         */
+        function updateLoading(progress, message) {
+            elements.loadingBar.style.width = `${progress}%`;
+            elements.loadingText.textContent = message;
+        }
+
+        /**
+         * Format timestamp for display
+         */
+        function formatTimestamp() {
+            const now = new Date();
+            return now.toLocaleTimeString('en-GB', { 
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        /**
+         * Get random item from array
+         */
+        function getRandomItem(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        /**
+         * Check if object class matches any known quip category (fuzzy)
+         */
+        function findQuipCategory(className) {
+            const normalized = className.toLowerCase();
+            
+            // Direct matches
+            if (JARVIS_QUIPS[normalized]) {
+                return normalized;
+            }
+            
+            // Partial match searches
+            for (const key of Object.keys(JARVIS_QUIPS)) {
+                if (normalized.includes(key) || key.includes(normalized)) {
+                    return key;
+                }
+            }
+            
+            return null;
+        }
+
+        /**
+         * Clean up memory after each detection cycle
+         */
+        function clearDetectionMemory() {
+            state.detectedObjects = [];
+        }
+
+        /**
+         * Calculate elapsed time in milliseconds
+         */
+        function getElapsedMs(startTime) {
+            return Date.now() - startTime;
+        }
+
+        // ============================================
+        // SPEECH SYNTHESIS ENGINE (Jarvis Voice)
+        // ============================================
+
+        /**
+         * Initialize speech synthesis and find best voice
+         */
+        async function initializeSpeech() {
+            return new Promise((resolve) => {
+                if (!window.speechSynthesis) {
+                    console.warn('Speech synthesis not supported');
+                    resolve(null);
+                    return;
+                }
+
+                // Wait for voices to load
+                if (window.speechSynthesis.getVoices().length > 0) {
+                    selectBestVoice();
+                    resolve(state.voice);
+                } else {
+                    window.speechSynthesis.onvoiceschanged = () => {
+                        selectBestVoice();
+                        resolve(state.voice);
+                    };
+                }
+            });
+        }
+
+        /**
+         * Select the best available voice for Jarvis (British/masculine preference)
+         */
+        function selectBestVoice() {
+            const voices = window.speechSynthesis.getVoices();
+            
+            // Priority search for British English male voice
+            const preferredVoices = [
+                // Specific British voices
+                ...voices.filter(v => v.lang.startsWith('en-GB') && v.name.toLowerCase().includes('male')),
+                ...voices.filter(v => v.lang.startsWith('en-GB')),
+                // Generic UK English
+                ...voices.filter(v => v.lang === 'en-uk'),
+                // Other English with "male" in name
+                ...voices.filter(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('male')),
+                // Default English
+                ...voices.filter(v => v.lang.startsWith('en')),
+            ];
+
+            state.voice = preferredVoices[0] || null;
+            
+            if (state.voice) {
+                state.hasAudio = true;
+                elements.btnToggleAudio.textContent = 'Audio On';
+                elements.btnToggleAudio.classList.add('active');
+            }
+        }
+
+        /**
+         * Speak a phrase with Jarvis voice
+         */
+        function speakPhrase(text, callback) {
+            if (!state.hasAudio || !state.voice) {
+                if (callback) callback();
+                return;
+            }
+
+            // Check cooldown
+            const now = Date.now();
+            if (now - state.lastSpeechTime < CONFIG.SPEECH_COOLDOWN) {
+                if (callback) callback();
+                return;
+            }
+
+            // Don't interrupt if already speaking
+            if (window.speechSynthesis.speaking) {
+                // Queue for next available slot
+                setTimeout(() => speakPhrase(text, callback), 500);
+                return;
+            }
+
+            state.isSpeaking = true;
+            state.lastSpeechTime = now;
+            
+            // Visual feedback - activate core ring
+            elements.coreRing.classList.add('active');
+            elements.coreInner.classList.add('active');
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.voice = state.voice;
+            utterance.rate = 0.95; // Slightly slower, more authoritative
+            utterance.pitch = 0.9; // Slightly deeper
+            utterance.volume = 1.0;
+
+            utterance.onend = () => {
+                state.isSpeaking = false;
+                elements.coreRing.classList.remove('active');
+                elements.coreInner.classList.remove('active');
+                if (callback) callback();
+            };
+
+            utterance.onerror = (e) => {
+                console.error('Speech error:', e);
+                state.isSpeaking = false;
+                elements.coreRing.classList.remove('active');
+                elements.coreInner.classList.remove('active');
+                if (callback) callback();
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        /**
+         * Display Jarvis speech in the UI
+         */
+        function displaySpeech(text, isLocal = false) {
+            elements.speechText.textContent = text;
+            elements.speechTimestamp.textContent = formatTimestamp();
+            elements.jarvisSpeech.classList.add('visible');
+
+            // Auto-hide after 8 seconds
+            if (isLocal) {
+                setTimeout(() => {
+                    elements.jarvisSpeech.classList.remove('visible');
+                }, 8000);
+            }
+        }
+
+        /**
+         * Jarvis quip system - delivers contextual responses
+         */
+        function jarvisQuip(className) {
+            // Find matching quip category
+            const category = findQuipCategory(className);
+            let quipList = category ? JARVIS_QUIPS[category] : GENERIC_QUIPS;
+
+            // Filter out recently used quips for variety
+            const availableQuips = quipList.filter(q => !state.recentQuips.has(q));
+            if (availableQuips.length === 0) {
+                state.recentQuips.clear(); // Reset if all quips used
+                return getRandomItem(quipList);
+            }
+
+            const quip = getRandomItem(availableQuips);
+            state.recentQuips.add(quip);
+
+            // Limit recent quips memory
+            if (state.recentQuips.size > 20) {
+                const iterator = state.recentQuips.values();
+                state.recentQuips.delete(iterator.next().value);
+            }
+
+            return quip;
+        }
+
+        // ============================================
+        // WEBCAM STREAM MANAGEMENT
+        // ============================================
+
+        /**
+         * Request camera access and start video stream
+         */
+        async function startCamera(facingMode = 'user') {
+            try {
+                updateLoading(30, 'Initializing camera hardware...');
+
+                const constraints = {
+                    video: {
+                        facingMode: facingMode,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 30 }
+                    },
+                    audio: false
+                };
+
+                state.videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+                state.hasCamera = true;
+
+                // Attach stream to video element
+                elements.video.srcObject = state.videoStream;
+                await elements.video.play();
+
+                // Get actual video dimensions
+                state.videoWidth = elements.video.videoWidth;
+                state.videoHeight = elements.video.videoHeight;
+
+                updateLoading(60, 'Camera feed acquired');
+                return true;
+            } catch (error) {
+                console.error('Camera error:', error);
+                handleCameraError(error);
+                return false;
+            }
+        }
+
+        /**
+         * Handle camera access errors with friendly UI
+         */
+        function handleCameraError(error) {
+            state.hasCamera = false;
+            elements.statusDot.classList.add('offline');
+            elements.systemStatus.textContent = 'Offline';
+
+            let errorMessage = 'Camera access denied or unavailable.';
+            let errorDetails = '';
+
+            switch (error.name) {
+                case 'NotAllowedError':
+                    errorMessage = 'Camera permissions have been denied. Please enable camera access in your browser settings and refresh the page.';
+                    errorDetails = `Error: ${error.name}\nMessage: ${error.message}\n\nTo enable camera access:\n1. Click the lock icon in your address bar\n2. Select "Permissions"\n3. Enable "Camera"\n4. Refresh this page`;
+                    break;
+                case 'NotFoundError':
+                    errorMessage = 'No camera device detected. Please connect a webcam and refresh the page.';
+                    errorDetails = `Error: ${error.name}\nMessage: ${error.message}\n\nPlease ensure:\n- A webcam is properly connected\n- The camera is not in use by another application\n- Camera drivers are installed`;
+                    break;
+                case 'NotReadableError':
+                    errorMessage = 'Camera is busy or in use by another application. Please close other apps using the camera and try again.';
+                    errorDetails = `Error: ${error.name}\nMessage: ${error.message}`;
+                    break;
+                default:
+                    errorMessage = 'Unable to access camera. Please check your device and browser compatibility.';
+                    errorDetails = `Error: ${error.name}\nMessage: ${error.message}\n\nYour browser: ${navigator.userAgent}\nPlatform: ${navigator.platform}`;
+            }
+
+            elements.errorMessage.textContent = errorMessage;
+            elements.errorDetails.textContent = errorDetails;
+            elements.errorCard.classList.remove('hidden');
+            updateLoading(100, 'System initialization failed');
+        }
+
+        /**
+         * Stop camera and clean up
+         */
+        function stopCamera() {
+            if (state.videoStream) {
+                state.videoStream.getTracks().forEach(track => track.stop());
+                state.videoStream = null;
+            }
+            state.hasCamera = false;
+            elements.video.srcObject = null;
+        }
+
+        // ============================================
+        // OBJECT DETECTION ENGINE (TensorFlow.js COCO-SSD)
+        // ============================================
+
+        /**
+         * Initialize the COCO-SSD model
+         */
+        async function loadDetectionModel() {
+            try {
+                updateLoading(40, 'Loading neural network model...');
+                
+                // Load COCO-SSD model
+                state.model = await cocoSsd.load({
+                    base: 'mobilenet_v2'
+                });
+
+                updateLoading(70, 'Model weights loaded');
+                return true;
+            } catch (error) {
+                console.error('Model loading error:', error);
+                updateLoading(100, 'Model initialization failed');
+                showError('Model Loading Failed', 
+                    `Unable to load the object detection model. Please check your internet connection and try again.\n\nError: ${error.message}`,
+                    'Retry');
+                return false;
+            }
+        }
+
+        /**
+         * Perform object detection on current video frame
+         */
+        async function detectObjects() {
+            if (!state.model || !state.hasCamera || state.isPaused) {
+                return [];
+            }
+
+            const startTime = performance.now();
+
+            try {
+                // Run inference
+                const predictions = await state.model.detect(elements.video);
+
+                const endTime = performance.now();
+                const inferenceTime = endTime - startTime;
+
+                // Update inference display
+                elements.inferenceDisplay.textContent = `${inferenceTime.toFixed(1)}ms`;
+
+                // Filter by confidence threshold
+                const confidentDetections = predictions.filter(
+                    pred => pred.score >= CONFIG.CONFIDENCE_THRESHOLD
+                ).slice(0, CONFIG.MAX_DETECTIONS);
+
+                // Update state
+                state.detectedObjects = confidentDetections;
+                state.detectionHistory = confidentDetections;
+
+                // Update UI
+                updateDetectionDisplay(confidentDetections, inferenceTime);
+                updateObjectCount(confidentDetections.length);
+
+                // Trigger Jarvis quip on new significant detection
+                if (confidentDetections.length > 0 && !state.isSpeaking) {
+                    const highestConfidence = confidentDetections.reduce((a, b) => 
+                        a.score > b.score ? a : b
+                    );
+                    
+                    // Only quip if confidence is high enough
+                    if (highestConfidence.score > 0.6) {
+                        const quip = jarvisQuip(highestConfidence.class);
+                        displaySpeech(quip, true);
+                        speakPhrase(quip);
+                    }
+                }
+
+                return confidentDetections;
+            } catch (error) {
+                console.error('Detection error:', error);
+                return [];
+            }
+        }
+
+        /**
+         * Update the detection list UI
+         */
+        function updateDetectionDisplay(detectionList, inferenceTime) {
+            const container = elements.detectionItems;
+            container.innerHTML = '';
+
+            if (detectionList.length === 0) {
+                container.innerHTML = '<div style="color: var(--text-secondary); padding: 10px 0;">No targets detected</div>';
+                return;
+            }
+
+            // Sort by confidence (highest first)
+            const sorted = [...detectionList].sort((a, b) => b.score - a.score);
+
+            sorted.forEach((det, index) => {
+                const item = document.createElement('div');
+                item.className = 'detection-item';
+                
+                const className = document.createElement('span');
+                className.className = 'class-name';
+                className.textContent = det.class;
+                
+                const confidence = document.createElement('span');
+                confidence.className = `confidence ${det.score > 0.7 ? 'high' : ''}`;
+                confidence.textContent = `${(det.score * 100).toFixed(1)}%`;
+                
+                item.appendChild(className);
+                item.appendChild(confidence);
+                container.appendChild(item);
+            });
+        }
+
+        /**
+         * Update object count display
+         */
+        function updateObjectCount(count) {
+            elements.objectCount.textContent = count;
+        }
+
+        // ============================================
+        // CANVAS RENDERING ENGINE
+        // ============================================
+
+        /**
+         * Draw bounding boxes and labels on canvas
+         */
+        function renderBoundingBoxes(detections, startTime) {
+            const canvas = elements.canvas;
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (detections.length === 0) {
+                return;
+            }
+
+            const now = Date.now();
+            const latency = now - startTime;
+            elements.latencyDisplay.textContent = `${latency.toFixed(0)}ms`;
+
+            // Draw each detection
+            detections.forEach((det) => {
+                const [x, y, width, height] = det.bbox;
+                
+                // Style based on confidence
+                const confidence = det.score;
+                const isHighConfidence = confidence > 0.7;
+                
+                // Box styling
+                ctx.strokeStyle = isHighConfidence ? '#ff6b35' : '#00f0ff';
+                ctx.lineWidth = isHighConfidence ? 3 : 2;
+                
+                // Glow effect
+                ctx.shadowColor = isHighConfidence ? 'rgba(255, 107, 53, 0.6)' : 'rgba(0, 240, 255, 0.6)';
+                ctx.shadowBlur = 10;
+                
+                // Draw bounding box
+                ctx.strokeRect(x, y, width, height);
+                
+                // Reset shadow
+                ctx.shadowBlur = 0;
+                
+                // Draw label background
+                const label = `${det.class} ${(confidence * 100).toFixed(1)}%`;
+                ctx.font = '12px "Courier New", monospace';
+                const metrics = ctx.measureText(label);
+                const labelHeight = 20;
+                const labelWidth = metrics.width + 12;
+                
+                // Position label inside or above box
+                const labelY = y - 25 < 0 ? y + height + 5 : y - 25;
+                
+                // Draw label background
+                ctx.fillStyle = 'rgba(11, 19, 41, 0.9)';
+                ctx.fillRect(x, labelY, labelWidth, labelHeight);
+                
+                // Label border
+                ctx.strokeStyle = isHighConfidence ? '#ff6b35' : '#00f0ff';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, labelY, labelWidth, labelHeight);
+                
+                // Label text
+                ctx.fillStyle = isHighConfidence ? '#ff6b35' : '#00f0ff';
+                ctx.fillText(label, x + 6, labelY + 15);
+                
+                // Draw corner brackets for high-confidence detections
+                if (isHighConfidence) {
+                    const cornerSize = 8;
+                    ctx.lineWidth = 2;
+                    
+                    // Top-left
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + cornerSize, y);
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x, y + cornerSize);
+                    ctx.stroke();
+                    
+                    // Top-right
+                    ctx.beginPath();
+                    ctx.moveTo(x + width, y);
+                    ctx.lineTo(x + width - cornerSize, y);
+                    ctx.moveTo(x + width, y);
+                    ctx.lineTo(x + width, y + cornerSize);
+                    ctx.stroke();
+                    
+                    // Bottom-left
+                    ctx.beginPath();
+                    ctx.moveTo(x, y + height);
+                    ctx.lineTo(x + cornerSize, y + height);
+                    ctx.moveTo(x, y + height);
+                    ctx.lineTo(x, y + height - cornerSize);
+                    ctx.stroke();
+                    
+                    // Bottom-right
+                    ctx.beginPath();
+                    ctx.moveTo(x + width, y + height);
+                    ctx.lineTo(x + width - cornerSize, y + height);
+                    ctx.moveTo(x + width, y + height);
+                    ctx.lineTo(x + width, y + height - cornerSize);
+                    ctx.stroke();
+                }
+            });
+        }
+
+        /**
+         * Resize canvas to match video dimensions
+         */
+        function resizeCanvas() {
+            const canvas = elements.canvas;
+            const video = elements.video;
+            
+            if (video.videoWidth && video.videoHeight) {
+                state.videoWidth = video.videoWidth;
+                state.videoHeight = video.videoHeight;
+            }
+            
+            // Set canvas to match container size for proper overlay
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            
+            state.canvasWidth = canvas.width;
+            state.canvasHeight = canvas.height;
+        }
+
+        /**
+         * Coordinate mapping for bounding boxes
+         * Maps video coordinates to canvas display coordinates
+         */
+        function mapCoordinatesToCanvas(videoX, videoY, videoW, videoH) {
+            const canvas = elements.canvas;
+            const video = elements.video;
+            
+            // Get video aspect ratio
+            const videoRatio = videoW / videoH;
+            const canvasRatio = canvas.width / canvas.height;
+            
+            let drawWidth, drawHeight, offsetX, offsetY;
+            
+            if (canvasRatio > videoRatio) {
+                // Canvas is wider - letterbox vertically
+                drawHeight = canvas.height;
+                drawWidth = drawHeight * videoRatio;
+                offsetX = (canvas.width - drawWidth) / 2;
+                offsetY = 0;
+            } else {
+                // Canvas is taller - letterbox horizontally
+                drawWidth = canvas.width;
+                drawHeight = drawWidth / videoRatio;
+                offsetX = 0;
+                offsetY = (canvas.height - drawHeight) / 2;
+            }
+            
+            // Map coordinates
+            const scaleX = drawWidth / videoW;
+            const scaleY = drawHeight / videoH;
+            
+            return {
+                x: videoX * scaleX + offsetX,
+                y: videoY * scaleY + offsetY,
+                width: videoW * scaleX,
+                height: videoH * scaleY
+            };
+        }
+
+        // ============================================
+        // MAIN RENDER LOOP
+        // ============================================
+
+        /**
+         * Main animation loop using requestAnimationFrame
+         */
+        function renderLoop(timestamp) {
+            if (!state.isRunning || state.isPaused) {
+                state.animationId = requestAnimationFrame(renderLoop);
+                return;
+            }
+
+            // FPS calculation
+            if (!state.fpsLastFrame) {
+                state.fpsLastFrame = timestamp;
+            }
+            
+            state.frameCount++;
+            const fpsInterval = timestamp - state.fpsLastFrame;
+            
+            if (fpsInterval >= 1000) {
+                state.fps = state.frameCount;
+                state.frameCount = 0;
+                state.fpsLastFrame = timestamp;
+                elements.fpsDisplay.textContent = state.fps;
+            }
+
+            // Run detection at target FPS rate
+            const now = Date.now();
+            if (now - state.lastDetectionTime >= (1000 / CONFIG.TARGET_FPS)) {
+                state.lastDetectionTime = now;
+                
+                detectObjects().then(detections => {
+                    if (detections.length > 0) {
+                        // Get first detection for coordinate mapping
+                        const det = detections[0];
+                        const [x, y, w, h] = det.bbox;
+                        
+                        // Render bounding boxes directly from detection coordinates
+                        renderBoundingBoxes(detections, state.lastDetectionTime);
+                    }
+                });
+            }
+
+            state.animationId = requestAnimationFrame(renderLoop);
+        }
+
+        // ============================================
+        // INITIALIZATION SEQUENCE
+        // ============================================
+
+        /**
+         * Initialize Jarvis AI system
+         */
+        async function initializeJarvis() {
+            try {
+                // Step 1: Load model
+                updateLoading(20, 'Loading neural network architecture...');
+                await new Promise(resolve => setTimeout(resolve, 300)); // Simulate loading
+
+                const modelLoaded = await loadDetectionModel();
+                if (!modelLoaded && state.hasCamera === undefined) {
+                    throw new Error('Failed to load model');
+                }
+
+                // Step 2: Initialize speech
+                updateLoading(50, 'Initializing voice synthesis...');
+                await initializeSpeech();
+                
+                await new Promise(resolve => setTimeout(resolve, 200));
+
+                // Step 3: Start camera
+                updateLoading(60, 'Accessing camera hardware...');
+                const cameraStarted = await startCamera();
+                
+                if (!cameraStarted) {
+                    // Camera failed but we can still show the UI
+                    // User can click retry
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 200));
+
+                // Step 4: Setup canvas
+                updateLoading(80, 'Calibrating display systems...');
+                resizeCanvas();
+                
+                // Listen for resize events
+                window.addEventListener('resize', resizeCanvas);
+                
+                await new Promise(resolve => setTimeout(resolve, 200));
+
+                // Step 5: Start render loop
+                updateLoading(95, 'Activating sensor arrays...');
+                state.isRunning = true;
+                
+                // Initial detection
+                await detectObjects();
+                
+                // Start the loop
+                renderLoop();
+
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                // Complete
+                updateLoading(100, 'All systems operational');
+                
+                // Greeting
+                setTimeout(() => {
+                    const greeting = getRandomItem(GREETING_QUIPS);
+                    displaySpeech(greeting, true);
+                    speakPhrase(greeting);
+                }, 500);
+
+                // Hide loading screen
+                setTimeout(() => {
+                    elements.loadingScreen.classList.add('hidden');
+                }, 800);
+
+                elements.statusDot.classList.remove('offline');
+                elements.systemStatus.textContent = 'Online';
+                
+                // Initial data display
+                if (state.videoWidth && state.videoHeight) {
+                    elements.resolutionDisplay.textContent = `${state.videoWidth}x${state.videoHeight}`;
+                }
+
+            } catch (error) {
+                console.error('Initialization error:', error);
+                handleCameraError(error);
+            }
+        }
+
+        // ============================================
+        // ERROR HANDLING
+        // ============================================
+
+        /**
+         * Show a styled error card
+         */
+        function showError(title, message, actionText = 'Dismiss') {
+            elements.errorCard.classList.remove('hidden');
+            document.querySelector('.error-title').textContent = title;
+            elements.errorMessage.textContent = message;
+            elements.errorAction.textContent = actionText;
+        }
+
+        /**
+         * Hide error card
+         */
+        function hideError() {
+            elements.errorCard.classList.add('hidden');
+        }
+
+        // ============================================
+        // USER INTERACTIONS & CONTROLS
+        // ============================================
+
+        /**
+         * Toggle pause/resume
+         */
+        function togglePause() {
+            state.isPaused = !state.isPaused;
+            
+            if (state.isPaused) {
+                elements.btnToggle.textContent = 'Resume';
+                elements.btnToggle.classList.remove('active');
+                elements.systemStatus.textContent = 'Paused';
+            } else {
+                elements.btnToggle.textContent = 'Pause';
+                elements.btnToggle.classList.add('active');
+                elements.systemStatus.textContent = 'Online';
+            }
+        }
+
+        /**
+         * Toggle audio on/off
+         */
+        function toggleAudio() {
+            state.hasAudio = !state.hasAudio;
+            
+            if (state.hasAudio) {
+                elements.btnToggleAudio.textContent = 'Audio On';
+                elements.btnToggleAudio.classList.add('active');
+            } else {
+                elements.btnToggleAudio.textContent = 'Audio Off';
+                elements.btnToggleAudio.classList.remove('active');
+                // Stop any ongoing speech
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                }
+            }
+        }
+
+        /**
+         * Retry / reboot system
+         */
+        async function rebootSystem() {
+            // Stop current operations
+            state.isRunning = false;
+            if (state.animationId) {
+                cancelAnimationFrame(state.animationId);
+            }
+            
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+            
+            hideError();
+            elements.loadingScreen.classList.remove('hidden');
+            elements.loadingBar.style.width = '0%';
+            
+            // Stop camera
+            stopCamera();
+            
+            // Reset state
+            state.detectedObjects = [];
+            state.detectionHistory = [];
+            state.recentQuips.clear();
+            state.hasCamera = false;
+            state.hasAudio = false;
+            
+            // Reset displays
+            elements.fpsDisplay.textContent = '0';
+            elements.objectCount.textContent = '0';
+            elements.resolutionDisplay.textContent = '--';
+            elements.deviceDisplay.textContent = '--';
+            elements.latencyDisplay.textContent = '--';
+            elements.inferenceDisplay.textContent = '--';
+            elements.detectionItems.innerHTML = '<div style="color: var(--text-secondary); padding: 10px 0;">No targets detected</div>';
+            elements.jarvisSpeech.classList.remove('visible');
+            elements.coreRing.classList.remove('active');
+            elements.coreInner.classList.remove('active');
+            elements.statusDot.classList.add('offline');
+            elements.systemStatus.textContent = 'Rebooting';
+            
+            // Reinitialize
+            await initializeJarvis();
+        }
+
+        // ============================================
+        // OPTIONAL LLM INTEGRATION TEMPLATE
+        // ============================================
+        /*
+        // ============================================================================
+        // LLM ANALYSIS EXTENSION (Optional)
+        // ============================================================================
+        // This section demonstrates how to integrate a large language model
+        // for real-time generative analysis of detected objects.
+        // 
+        // To enable:
+        // 1. Uncomment the code below
+        // 2. Replace API_KEY with your actual API key (or use environment variables)
+        // 3. Configure the endpoint for your preferred LLM provider
+        // 4. Ensure CORS is properly configured or use a proxy
+        // 
+        // WARNING: This will send data to external servers. Only enable if you
+        // understand the privacy implications and have proper API credentials.
+        // ============================================================================
+
+        const LLM_CONFIG = {
+            // OpenAI API Example
+            provider: 'openai', // 'openai' | 'anthropic' | 'custom'
+            apiKey: 'YOUR_API_KEY_HERE', // Replace with actual key or use env var
+            
+            // OpenAI Configuration
+            openai: {
+                endpoint: 'https://api.openai.com/v1/chat/completions',
+                model: 'gpt-4',
+                maxTokens: 150,
+                temperature: 0.7
+            },
+            
+            // Anthropic Configuration
+            anthropic: {
+                endpoint: 'https://api.anthropic.com/v1/messages',
+                model: 'claude-3-opus-20240229',
+                maxTokens: 150,
+                temperature: 0.7
+            }
+        };
+
+        /**
+         * Send detection data to LLM for analysis
+         * @param {Array} detections - Array of detected objects
+         * @returns {Promise<string>} - LLM analysis response
+         */
+        /*
+        async function analyzeWithLLM(detections) {
+            if (!LLM_CONFIG.apiKey || LLM_CONFIG.apiKey === 'YOUR_API_KEY_HERE') {
+                console.warn('LLM analysis disabled: API key not configured');
+                return null;
+            }
+
+            // Build context from detections
+            const objectDescriptions = detections.map(det => 
+                `${det.class} (confidence: ${(det.score * 100).toFixed(1)}%)`
+            ).join(', ');
+
+            const prompt = `Analyze the following detected objects in the camera view and provide a brief, insightful observation:\n\nDetected: ${objectDescriptions}\n\nAnalysis:`;
+
+            try {
+                let response;
+                
+                if (LLM_CONFIG.provider === 'openai') {
+                    response = await fetch(LLM_CONFIG.openai.endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${LLM_CONFIG.apiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: LLM_CONFIG.openai.model,
+                            messages: [{ role: 'user', content: prompt }],
+                            max_tokens: LLM_CONFIG.openai.maxTokens,
+                            temperature: LLM_CONFIG.openai.temperature
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    return data.choices[0].message.content;
+                }
+                
+                else if (LLM_CONFIG.provider === 'anthropic') {
+                    response = await fetch(LLM_CONFIG.anthropic.endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${LLM_CONFIG.apiKey}`,
+                            'Content-Type': 'application/json',
+                            'anthropic-version': '2023-06-01'
+                        },
+                        body: JSON.stringify({
+                            model: LLM_CONFIG.anthropic.model,
+                            max_tokens: LLM_CONFIG.anthropic.maxTokens,
+                            temperature: LLM_CONFIG.anthropic.temperature,
+                            messages: [{ role: 'user', content: prompt }]
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    return data.content[0].text;
+                }
+                
+                else if (LLM_CONFIG.provider === 'custom') {
+                    // Custom endpoint implementation
+                    response = await fetch(LLM_CONFIG.custom.endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${LLM_CONFIG.apiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            prompt: prompt,
+                            max_tokens: LLM_CONFIG.custom.maxTokens || 150,
+                            temperature: LLM_CONFIG.custom.temperature || 0.7
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    return data.response || data.choices?.[0]?.text || JSON.stringify(data);
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`LLM API error: ${response.status} ${response.statusText}`);
+                }
+                
+            } catch (error) {
+                console.error('LLM analysis error:', error);
+                return null;
+            }
+        }
+
+        /**
+         * Enhanced detection with LLM analysis
+         */
+        /*
+        async function detectAndAnalyze() {
+            const detections = await detectObjects();
+            
+            if (detections.length > 0) {
+                // Optionally analyze with LLM (rate-limited to once per minute)
+                const now = Date.now();
+                if (now - state.lastLLMAnalysis > 60000 && detections.some(d => d.score > 0.7)) {
+                    state.lastLLMAnalysis = now;
+                    
+                    const analysis = await analyzeWithLLM(detections);
+                    if (analysis) {
+                        console.log('LLM Analysis:', analysis);
+                        // Could display this in UI or speak it
+                        // displaySpeech(`Analysis: ${analysis}`, true);
+                    }
+                }
+            }
+            
+            return detections;
+        }
+        */
+
+        // ============================================================================
+        // END LLM INTEGRATION TEMPLATE
+        // ============================================================================
+
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+
+        elements.btnToggle.addEventListener('click', togglePause);
+        elements.btnToggleAudio.addEventListener('click', toggleAudio);
+        elements.btnRetry.addEventListener('click', rebootSystem);
+        elements.errorDismiss.addEventListener('click', rebootSystem);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Space to toggle pause
+            if (e.code === 'Space' && !e.target.matches('input, textarea')) {
+                e.preventDefault();
+                togglePause();
+            }
+            
+            // 'R' to reboot
+            if (e.code === 'KeyR' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                rebootSystem();
+            }
+            
+            // 'A' to toggle audio
+            if (e.code === 'KeyA' && !e.ctrlKey && !e.metaKey) {
+                toggleAudio();
+            }
+        });
+
+        // Handle visibility change - pause when tab hidden
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // Pause detection when tab is hidden to save resources
+                if (!state.isPaused) {
+                    state._wasPaused = state.isPaused;
+                    state.isPaused = true;
+                }
+            } else {
+                // Resume when tab becomes visible
+                if (state._wasPaused) {
+                    state.isPaused = false;
+                    state._wasPaused = false;
+                }
+            }
+        });
+
+        // ============================================
+        // STARTUP
+        // ============================================
+
+        // Boot Jarvis on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeJarvis();
+        });
+
+        // Handle page unload - cleanup
+        window.addEventListener('beforeunload', () => {
+            stopCamera();
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+            if (state.animationId) {
+                cancelAnimationFrame(state.animationId);
+            }
+        });
+
+        console.log('%c JARVIS AI SYSTEM v1.0.0 ', 'background: #030712; color: #00f0ff; font-size: 16px; padding: 10px; border: 1px solid #00f0ff;');
+        console.log('%c All systems initialized. Ready for command, sir. ', 'color: #94a3b8; font-style: italic;');
+        console.log('%c Tip: Press SPACE to pause/resume, R to reboot, A to toggle audio ', 'color: #ff6b35; font-size: 12px;');
+    </script>
+</body>
+</html>
