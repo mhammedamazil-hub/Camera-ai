@@ -1,7 +1,9 @@
 # GEOLOGY
 
-**Module:** `src/earth/terrain.js` (475 lines) ·
-**Tests:** `tests/terrain.test.js` (47) · **Status:** validated (equilibrium only)
+**Modules:** `src/earth/terrain.js` (static: DEM, hypsometry, isostasy) ·
+`src/earth/geology.js` (dynamic: flexure, rheology, erosion, seismology)
+**Tests:** `tests/terrain.test.js` (49) + `tests/geology.test.js` (70)
+**Status:** validated
 
 ---
 
@@ -186,6 +188,114 @@ Hillslope diffusion:
   cos(latitude) area weighting.
 - The pipeline (`scripts/build-elevation-mips.mjs`) **refuses to write
   output** that fails its own plausibility checks.
+
+## 3e. The dynamic module — `src/earth/geology.js`
+
+`terrain.js` describes an equilibrium. `geology.js` adds the processes that
+take time, so that "a 3 km mountain" can be dated and "10 km deep" can be
+described as brittle or ductile.
+
+### Flexure
+
+A load bends the lithosphere; Airy isostasy is the infinite-rigidity limit.
+
+```
+D     = E Te³ / (12(1 − ν²))          flexural rigidity
+α     = (4D / Δρ g)^(1/4)              flexural parameter (length)
+w(x)  = w₀ e^(−x/α) [cos(x/α) + sin(x/α)]    deflection of an infinite plate
+```
+
+For Te = 25 km: **D = 9.72e22 N m**, **α = 63.9 km** (with Δρ = 2380).
+The support ratio runs from **0.5 at zero load width** (a line load is
+exactly half-carried in shear) to 1.0 for a load many α wide.
+
+**Measured support ratio** at fixed width decreasing with stiffness — a
+stiffer plate has a longer α, so the same load spans fewer α and is *less*
+fully compensated. That is the counter-intuitive direction, and an early
+test asserted the opposite.
+
+### Geotherm with radiogenic production
+
+```
+d²T/dz² = −A(z)/k,  A(z) = A₀ e^(−z/Hr)
+T(z)    = T₀ + (q₀/k) z + (A₀ Hr²/k)(1 − e^(−z/Hr))
+```
+
+The production term makes the geotherm **convex** (hotter at depth than the
+linear extrapolation). At 30 km on a 60 mW/m² geotherm: **1103 K**.
+
+### Oceanic lithosphere
+
+| Law | Expression | Valid |
+|---|---|---|
+| Half-space | d = 2500 + 350√t | 0–70 Myr |
+| Plate model | d = 6400 − 3200 e^(−t/62.8) | 0–∞ |
+
+The two agree to <600 m over 10–30 Myr and diverge at old ages, which is the
+documented failure of the half-space law rather than a bug.
+
+### Rock strength and the seismogenic zone
+
+Strength is the **minimum** of fracture and flow:
+
+```
+friction:  τ = C + μ(σ_n − P_pore),  Byerlee: μ = 0.85 or 0.6, C = 20 MPa
+flow:      ε̇ = A σⁿ e^(−Q/RT),  Hirth et al. (2001): A = 6.3e−12, n = 4, Q = 135 kJ/mol
+```
+
+The two curves cross where quartz begins to flow:
+
+| Heat flow | Base of seismogenic zone |
+|---|---|
+| 50 mW/m² | **11.8 km** |
+| 60 mW/m² | **10.4 km** |
+| 80 mW/m² | **8.5 km** |
+| 100 mW/m² | **7.3 km** |
+
+The 350 °C empirical limit (14.6 km at 60 mW/m²) is an independent upper
+bound, and the rheological transition sits above it — the two methods agree
+on the order without sharing a parameter.
+
+### Erosion
+
+```
+stream power:  E = K A^m S^n,  m = 0.5, n = 1
+hillslope:     ∂z/∂t = D ∇²z,  D ≈ 5e−3 m²/yr
+scarp:         z(x,t) = (h/2)[1 + erf(x / (2√(Dt)))]
+```
+
+A 10 m fault scarp diffuses to within 2.4 m of its midpoint in 10 ka, with a
+blur length of **7.1 m** — computed, not asserted.
+
+### Seismology
+
+```
+t = d/v                                  travel time
+p = sin i / v                            ray parameter (Snell)
+log₁₀E = 1.5M + 4.8                      Gutenberg–Richter
+Mw = (2/3)(log₁₀M₀ − 9.1)                Hanks & Kanamori
+```
+
+A magnitude unit is **31.6×** in energy; verified by round-trip.
+
+### Mantle density and the adiabat
+
+```
+ρ(P,T) = ρ₀[1 − α(T − T₀) + P/K_T]      clamped at 10% temperature change
+dT/dz  = αgT/Cp ≈ 0.48 K/km
+```
+
+The clamp is an artefact and is labelled one: beyond 10% the linear
+expansion is meaningless.
+
+### Sea level
+
+```
+thermal: ΔSL = α_v H ΔT
+ice:     ΔSL = (ρ_ice/ρ_water) V_ice / A_ocean
+```
+
+Ice gives **0.917 m** of sea level per metre melted, because ρ_ice = 917.
 
 ## 4. The three row-order bugs, and why they matter
 

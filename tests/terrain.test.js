@@ -186,10 +186,32 @@ describe('Airy isostasy', () => {
   });
 
   it('elevationFromThickness inverts airyRoot', () => {
+    // A column of height h sits on a crustal thickness H = H0 + h + root.
+    // The PREVIOUS version of this test omitted the `h` term, so it built its
+    // input with the same wrong geometry that the function assumed and the
+    // round trip passed while both were 25% wrong. Construct the input from
+    // the physical definition instead.
     const h = 3000;
     const root = airyRoot(h);
-    const H = SOLID_EARTH.H_CONTINENTAL + root;
+    const H = SOLID_EARTH.H_CONTINENTAL + h + root;
     expect(elevationFromThickness(H)).toBeCloseTo(h, 6);
+  });
+
+  it('elevationFromThickness recovers a 5 km plateau (regression)', () => {
+    // An independent, end-to-end check of the geometry: the crust under a
+    // 5 km plateau is 39 km + 5 km + root. The root is computed by airyRoot
+    // and the total is built from the physical definition, not from the
+    // function under test. Before the fix this returned 6.26 km.
+    const H = SOLID_EARTH.H_CONTINENTAL + 5000 + airyRoot(5000);
+    expect(elevationFromThickness(H)).toBeCloseTo(5000, -1);
+  });
+
+  it('Airy root and thickness are mutually consistent', () => {
+    for (const h of [-2000, 0, 1000, 5000, 8848]) {
+      const root = airyRoot(h);
+      const H = SOLID_EARTH.H_CONTINENTAL + h + root;
+      expect(elevationFromThickness(H)).toBeCloseTo(h, 6);
+    }
   });
 
   it('Pratt isostasy predicts low-density crust under Tibet', () => {

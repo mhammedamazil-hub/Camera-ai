@@ -241,13 +241,25 @@ export function airyRoot(elevationM, rhoCrust = SOLID_EARTH.RHO_CONTINENTAL_CRUS
 }
 
 /**
- * Inverse: given a measured crustal thickness H (m) under a continental
- * column of reference thickness H0, the elevation is
- *   h = (H - H0) * (rho_m - rho_c)/rho_c   (for a simple two-layer model).
+ * Inverse of {@link airyRoot}: the elevation supported by a measured crustal
+ * thickness H (m), for a column of reference thickness H0 at sea level.
+ *
+ * DERIVATION (this once had the wrong factor, so it is written out in full)
+ * The Airy root of a column of height h above the reference is
+ *   r = h rho_c / (rho_m - rho_c)
+ * and the total crustal thickness under that column is
+ *   H = H0 + h + r
+ *     = H0 + h [1 + rho_c/(rho_m - rho_c)]
+ *     = H0 + h rho_m/(rho_m - rho_c)
+ * Therefore
+ *   h = (H - H0)(rho_m - rho_c)/rho_m        <-- rho_m, not rho_c
+ *
+ * The denominator is the mantle density, not the crust density. Using rho_c
+ * gives a factor of rho_m/rho_c = 1.25, i.e. a 25% overestimate of elevation.
  */
 export function elevationFromThickness(crustalThicknessM, H0 = SOLID_EARTH.H_CONTINENTAL,
   rhoCrust = SOLID_EARTH.RHO_CONTINENTAL_CRUST, rhoMantle = SOLID_EARTH.RHO_MANTLE) {
-  return ((crustalThicknessM - H0) * (rhoMantle - rhoCrust)) / rhoCrust;
+  return ((crustalThicknessM - H0) * (rhoMantle - rhoCrust)) / rhoMantle;
 }
 
 /**

@@ -8,9 +8,11 @@ validated, and — just as importantly — what it does **not** claim. Every
 number quoted here is produced by code in this repository and is pinned by a
 test. Nothing here is aspirational.
 
-- Status: **Phase 5 complete** (core planet). 419 automated tests passing.
+- Status: **Phase 6 complete** (solid Earth as a process). 491 automated tests passing.
 - Last validated: 2026-11-14.
-- Validation command: `npm test`
+- Validation command: `npm test` — which runs the suite **and**
+  `scripts/validate-docs.mjs`, so a document that quotes a function which
+  does not exist, or a test count that is no longer true, fails the build.
 
 ---
 
@@ -45,14 +47,15 @@ just by good intentions.
 | Particles & antimatter | `src/physics/particle-physics.js` | 485 | 38 | complete |
 | Elements | `src/chemistry/elements.js` | ~640 | 63 (shared) | complete |
 | Thermochemistry | `src/chemistry/thermochemistry.js` | ~760 | (shared) | complete |
-| Terrain | `src/earth/terrain.js` | 475 | 47 | complete |
+| Terrain | `src/earth/terrain.js` | 475 | 49 | complete |
+| Geology (dynamic) | `src/earth/geology.js` | ~600 | 70 | complete |
 | Oceanography | `src/earth/oceanography.js` | 588 | 60 | complete |
 | Field layers | `src/app/fields.js` | 324 | 45 | complete |
 | Globe renderer | `src/app/globe.js` | 550 | — | manual |
 | App shell | `src/app/main.js`, `bake.js`, `format.js` | ~700 | (format is tested) | complete |
 | Geometry invariants | `tests/geometry-conventions.test.js` | — | 18 | complete |
 
-**Total: ~6 900 lines of module code, 419 tests.**
+**Total: ~7 500 lines of module code, 491 tests.**
 
 ---
 
@@ -437,20 +440,27 @@ Stated plainly so that absence is never mistaken for completeness.
 
 | Not built | Why | Where it is recorded |
 |---|---|---|
-| Atmospheric dynamics / wind | Needs a shallow-water or primitive-equation solver; the module currently gives the *static* state | `docs/LIMITATIONS.md` |
-| Cloud physics | Would need a radiative transfer model to justify | — |
-| Plate tectonics as a *dynamic* process | Isostasy and crustal thickness are modelled; motion is not | — |
-| Biology | Not started | — |
+| Atmospheric dynamics / wind | Needs a shallow-water or primitive-equation solver; the module currently gives the *static* state | `docs/ATMOSPHERE.md` |
+| Cloud physics | Would need a radiative transfer model to justify | `docs/ATMOSPHERE.md` |
+| Plate tectonics as a *dynamic* process | Isostasy and crustal thickness are modelled; motion is not | `docs/GEOLOGY.md` |
+| **Biology** | Blocked on a precipitation field, which does not exist; the document fixes the interface instead of inventing numbers | **`docs/BIOLOGY.md`** |
+| **Ephemerides / lunar theory** | Solar geometry only; tides use a time-averaged equilibrium amplitude | **`docs/ASTRONOMY.md`** |
 | Ocean circulation as a GCM | Only the Stommel two-box model and Ekman theory | `docs/OCEANOGRAPHY.md` |
 | Quantum treatment of antimatter | Cross-sections are tabulated, not derived from QFT | `docs/CHEMISTRY.md` |
-| Mesoscale ocean eddies | Parameterised, not resolved | — |
+| Mesoscale ocean eddies | Parameterised, not resolved | `docs/OCEANOGRAPHY.md` |
+| Multigrid / spectral PDE solvers | SOR and finite differences only | `docs/NUMERICAL_METHODS.md` |
+| Web Worker offloading of the bake | The bake blocks the main thread for up to 2.1 s | `docs/SIMULATION_ARCHITECTURE.md` |
+
+The two entries in bold came out of writing their documents: `BIOLOGY.md`
+exists and says it is empty, which is more useful than the previous `—`, and
+`ASTRONOMY.md` pins exactly where the solar model stops being adequate.
 
 ---
 
 ## 11. How to verify any claim in this document
 
 ```bash
-npm test                        # 419 tests
+npm test                        # 491 tests
 npm run data:elevation          # re-derive the DEM, with its own checks
 node scripts/build-earth-texture.mjs
 python3 scripts/generate_periodic_table.py

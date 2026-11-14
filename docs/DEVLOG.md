@@ -214,7 +214,7 @@ Complete and validated: constants, mathematics, gravity, thermodynamics,
 atmosphere, particles/antimatter, elements, thermochemistry, terrain,
 oceanography, field layers, globe renderer.
 
-**419 tests passing.**
+**491 tests passing.**
 
 Next, in priority order:
 
@@ -225,3 +225,117 @@ Next, in priority order:
    `LIMITATIONS.md`, `RESEARCH_SOURCES.md`, `PERIODIC_TABLE.md`.
 3. A time-stepped climate model wired to the existing energy balance.
 4. Geomorphology: erosion and uplift, so the terrain can *evolve*.
+
+---
+
+## Phase 6 — the solid Earth as a process
+
+Writing `src/earth/geology.js` produced the densest cluster of real bugs in
+the project so far. All six were found by printing numbers, not by reading
+code. They are recorded because the *pattern* recurs.
+
+### 1. `elevationFromThickness` had the wrong denominator (25% error)
+
+The inverse of Airy isostasy is
+
+```
+h = (H − H₀)(ρ_m − ρ_c)/ρ_m
+```
+
+The code divided by `ρ_c`. For ρ_m/ρ_c = 1.25 that is a **25.2%**
+overestimate: a 63.85 km crustal column came out as 6.26 km instead of
+5.00 km.
+
+**Why the test did not catch it.** The test constructed its input as
+`H₀ + root`, omitting the `h` term. That is not a physical column, and it
+happened to be exactly the geometry the broken function assumed. The round
+trip passed because both sides were wrong in the same way. This is the
+purest example in the project of why a round-trip test cannot validate a
+model — only an independent definition can.
+
+### 2. Invented flow-law parameters
+
+`A = 1.1e-4, n = 3, Q = 155 kJ/mol` were numbers I did not have a source
+for. They predicted that a quartz crust never becomes ductile at any depth —
+obviously wrong from any strength-envelope figure.
+
+Correct: Hirth, Teyssier & Dunlap (2001), `A = 6.3e-12 MPa⁻⁴ s⁻¹`, `n = 4`,
+`Q = 135 kJ/mol`. With these the transition lands at 10.4 km, which is the
+textbook value.
+
+**Lesson:** if a constant has no source, the model's *qualitative* behaviour
+is usually enough to expose it. "Never becomes ductile" is a red flag that no
+parameter fit can rescue.
+
+### 3. Inverted strength comparison — twice
+
+Rock strength is the minimum of friction and creep. The condition for
+brittle failure is `friction < creep`. I wrote it as `creep < friction`,
+which placed the brittle zone from 10 km to the Moho and the surface in the
+ductile field. Corrected by reversing the subtraction — and then the
+*corrected* version had the sign flipped again, returning an empty brittle
+zone.
+
+Both fixes were one character. Both were invisible without printing the two
+curves against depth. The test now prints nothing but asserts the two
+endpoints, which is what makes it a real check.
+
+### 4. Cohesionless Byerlee → a ductile skin at the surface
+
+Byerlee's law describes *pre-existing fractures* and has no cohesion. Applied
+to intact rock it gives zero strength at zero depth, so the surface becomes
+ductile. Real strength envelopes use C = 10–50 MPa. Added `C = 20 MPa`
+(Jaeger & Cook) and changed the test to assert that surface rock has
+strength.
+
+### 5. `3.15576e7` is seconds per YEAR, not per million years
+
+Every age-based function was off by 10⁶. The clearest symptom was
+`thermalBoundaryDepth(100)` returning **112 m** for the base of a 100-Myr
+lithosphere.
+
+**The worst part is what I did first:** rather than treating 112 m as a bug,
+I wrote a paragraph explaining that the lithosphere is "ten e-foldings below
+the thermal boundary layer". That paragraph was a rationalisation of an
+arithmetic error, and it read as convincingly as the real thing. A comment
+can launder a bug.
+
+Fix: `SECONDS_PER_MYR = 3.15576e13`, a named constant, and a test that
+asserts the round trip at 100 Myr.
+
+### 6. Unit mismatch between two functions in the same file
+
+`scarpProfile` treated `D` as m²/s (multiplying years by 3.156e7) while
+`diffusionLength` treated it as m²/yr. So a scarp's blur width and its
+profile disagreed by a factor of √(3.156e7) = 5 620.
+
+Fixed by making both work in **m²/yr and years**, which is the geomorphology
+convention and happens to need no conversion at all. The test now checks the
+error-function solution against `core/math/special.js` at a known point,
+which ties the two to each other.
+
+### Two assertion bugs, not code bugs
+
+- `flexureRatio(0, Te)` was asserted to be 0. It is **0.5**: a line load on a
+  finite-rigidity plate is exactly half-compensated. The physics was right and
+  the test was wrong.
+- At *fixed* load width, the support ratio **decreases** with increasing Te,
+  because α grows as D^(1/4) and the load spans fewer α. I had guessed the
+  opposite direction. Corrected, with the wide-load limit checked separately
+  so that both regimes are pinned.
+
+### The pattern
+
+| Bug class | How many | How it was found |
+|---|---|---|
+| Wrong algebraic inverse | 1 | printing a round trip with a *physical* input |
+| Invented constants | 1 | qualitative behaviour impossible |
+| Inverted inequality | 2 | printing both curves vs depth |
+| Missing term (cohesion) | 1 | surface had no strength |
+| Unit conversion | 2 | a result 10⁶ too small, then 5 600 too large |
+| Wrong test assertion | 2 | the test failed and the code was right |
+
+**Seven of the ten were in the physics, not the tests.** That is the opposite
+of what I would have assumed going in. The lesson is not "write more tests";
+it is "print the numbers and check them against something you already know
+physically". A test only catches what you thought to assert.
