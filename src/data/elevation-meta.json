@@ -1,0 +1,44 @@
+{
+  "source": {
+    "name": "ETOPO1-derived 10 arc-minute global relief (ice surface)",
+    "original": "NOAA ETOPO1 (doi:10.7289/V5C8276M), US Government public domain",
+    "mirror": "https://github.com/g2e/etopo10 (MIT licence)",
+    "citation": "Amante, C. and B. W. Eakins (2009), ETOPO1 1 Arc-Minute Global Relief Model, NOAA Technical Memorandum NESDIS NGDC-24."
+  },
+  "grid": {
+    "nx": 2161,
+    "ny": 1081,
+    "cellSizeDeg": 0.16666666667,
+    "lonMin": -180,
+    "lonMax": 180,
+    "latMin": -90,
+    "latMax": 90,
+    "registration": "cell-centred, re-ordered to south-up",
+    "rowOrder": "row 0 = -90 deg, north-increasing (canonicalised by the pipeline)",
+    "sourceRowOrder": "NORTH-UP in the source file; the pipeline flips it once",
+    "cellCentreOffsetDeg": 0.083333333335
+  },
+  "encoding": {
+    "format": "int16 little-endian",
+    "bytesPerValue": 2,
+    "nodata": -32768
+  },
+  "statistics": {
+    "minElevationM": -10192,
+    "maxElevationM": 6193,
+    "meanElevationM": -1897.16,
+    "landCells": 792022,
+    "seaCells": 1543113,
+    "nodataCells": 0,
+    "cellLandFraction": 0.339,
+    "areaWeightedLandFraction": 0.2897
+  },
+  "validation": {
+    "cellMeanExtremes": "max cell-mean 6193 m, min cell-mean -10192 m",
+    "areaLandFraction": "28.97% vs known 29.2%",
+    "wellKnownPointsChecked": 9,
+    "headerRangeMatch": "exact"
+  },
+  "sha256": "1a63de850b360fa8ed53af62e63fcc3e1d7bb17df6c7e792699a89efe31189d5",
+  "bytes": 4672082
+}
