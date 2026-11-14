@@ -2,18 +2,20 @@
   "name": "project-terra",
   "version": "0.1.0",
   "private": true,
-  "description": "PROJECT TERRA — a physically simulated Earth. Science is the engine; the planet is the visualization.",
+  "description": "PROJECT TERRA \u2014 a physically simulated Earth. Science is the engine; the planet is the visualization.",
   "type": "module",
   "license": "MIT",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
-    "test": "vitest run",
+    "test": "vitest run && node scripts/validate-docs.mjs",
     "test:watch": "vitest",
     "data:periodic": "node scripts/generate-periodic-table.mjs",
     "data:elevation": "node scripts/build-elevation-mips.mjs",
-    "docs:refs": "node scripts/validate-docs.mjs"
+    "docs:refs": "node scripts/validate-docs.mjs",
+    "test:unit": "vitest run",
+    "check": "node scripts/validate-docs.mjs"
   },
   "dependencies": {
     "three": "0.187.0"

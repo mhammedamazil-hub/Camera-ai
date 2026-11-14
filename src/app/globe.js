@@ -106,7 +106,6 @@ export function createGlobe(canvas) {
       uLayerCmap: { value: 0 },
       uExposure: { value: 1.0 },
       uLayerOpacity: { value: 0.0 },
-      uLat: { value: 0 },
     },
     vertexShader: /* glsl */`
       varying vec3 vObjPos;

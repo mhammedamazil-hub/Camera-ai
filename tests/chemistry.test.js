@@ -12,7 +12,7 @@
 import { describe, it, expect } from 'vitest';
 import { K } from '../src/core/constants.js';
 import {
-  ELEMENTS, ELEMENT_META, element, requireProperty, molarMass, molarMassOf,
+  ELEMENTS, ELEMENT_META, element, BY_SYMBOL, BY_Z, requireProperty, molarMass, molarMassOf,
   parseFormula, phaseOf, semiEmpiricalBindingEnergy, stableZForA,
   alphaDecayQ, HE4_BINDING_MEV, ALPHA_Q_EXPERIMENTAL_MEV, ALPHA_Q_VALID_RANGE,
   geigerNuttallHalfLife, COMPLETE_ELEMENTS, countByBlock,
@@ -529,6 +529,51 @@ describe('heat of fusion/vaporisation provenance', () => {
     if (candidate) {
       expect(propertyProvenance(candidate.symbol, 'fusion')).toMatch(/Richards/);
       expect(heatOfFusion(candidate.symbol)).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('periodic-table dataset integrity (regressions)', () => {
+  it('atomic radii are in picometres, not 100x too large', () => {
+    // The generator once multiplied mendeleev's already-pm values by 100,
+    // storing H as 2500 pm instead of 25. Nothing threw; the data was just
+    // wrong by three orders of magnitude.
+    const expectRadius = { H: 25, C: 70, Fe: 140, Au: 135 };
+    for (const [sym, pm] of Object.entries(expectRadius)) {
+      const el = BY_SYMBOL.get(sym);
+      expect(el.atomicRadius_pm, `${sym} atomicRadius_pm`).toBeCloseTo(pm, 0);
+      expect(el.atomicRadius_pm).toBeLessThan(400); // no element is 2500 pm
+    }
+  });
+
+  it('uses the documented field names, not invented ones', () => {
+    const fe = BY_SYMBOL.get('Fe');
+    // These exact keys are what the docs claim; a rename would break users.
+    for (const k of ['density_kg_m3', 'meltingPoint_K', 'boilingPoint_K',
+      'isRadioactive', 'atomicMass', 'atomicRadius_pm']) {
+      expect(Object.prototype.hasOwnProperty.call(fe, k), `missing ${k}`).toBe(true);
+    }
+  });
+
+  it('missing data is null, never zero', () => {
+    const og = BY_SYMBOL.get('Og');
+    expect(og.meltingPoint_K).toBeNull();
+    expect(og.boilingPoint_K).toBeNull();
+    // A zero here would be indistinguishable from real data.
+    expect(og.meltingPoint_K).not.toBe(0);
+  });
+
+  it('flagging is consistent: every element above Bi is radioactive', () => {
+    for (const z of [92, 94, 99, 118]) {
+      expect(element(z).isRadioactive, `Z=${z}`).toBe(true);
+    }
+  });
+
+  it('isotope abundances use abundance_percent and sum to 100', () => {
+    for (const sym of ['Fe', 'U', 'H', 'C', 'O']) {
+      const el = BY_SYMBOL.get(sym);
+      const sum = el.isotopes.reduce((a, i) => a + (i.abundance_percent ?? 0), 0);
+      expect(sum, `${sym} isotopic abundance`).toBeCloseTo(100, 1);
     }
   });
 });

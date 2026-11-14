@@ -267,8 +267,23 @@ def main():
             'oxidationStates': list(el.oxistates) if el.oxistates else [],
             'electronegativityPauling': en,
             'electronAffinity_eV': clean(el.electron_affinity),
-            'atomicRadius_pm': clean(el.atomic_radius) * 100 if el.atomic_radius else None,
-            'covalentRadius_pm': clean(el.covalent_radius_cordero) * 100 if getattr(el, 'covalent_radius_cordero', None) else None,
+            # UNIT TRAP: mendeleev returns radii in ANGSTROM (H = 25.0??) --
+            # no: it returns PICOMETRES divided by 10, i.e. 25.0 for H whose
+            # true atomic radius is 25 pm (0.25 Angstrom). Verified against
+            # mendeleev directly: element('H').atomic_radius == 25.0 and the
+            # documented value is 25 pm. Multiplying by 100 therefore stores
+            # 2500 pm, a factor of 1000 too large. The correct conversion to
+            # picometres is x10 (25.0 -> 250 pm)? That is also wrong.
+            #
+            # RESOLVED: mendeleev documents atomic_radius in pm and returns
+            # 25.0 for hydrogen, which is 25 pm only if we accept the
+            # "atomic radius" of H as 25 pm (0.25 A) -- it is, in the
+            # covalent-radius convention used by the source. So the value is
+            # ALREADY in picometres and must be stored UNCHANGED. The x100
+            # was pure invention and put every radius three orders of
+            # magnitude out.
+            'atomicRadius_pm': clean(el.atomic_radius),
+            'covalentRadius_pm': clean(el.covalent_radius_cordero) if getattr(el, 'covalent_radius_cordero', None) else None,
             'ionizationEnergies': ies,
             'isotopes': isotopes,
             'nuclearData': nuclear,
