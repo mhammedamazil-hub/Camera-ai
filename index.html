@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PROJECT TERRA — A Physically Simulated Earth</title>
+<link rel="stylesheet" href="/src/app/style.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="globe"></canvas>
+
+    <header id="hud-top">
+      <div class="brand">
+        <span class="mark">◍</span>
+        <span class="title">PROJECT TERRA</span>
+        <span class="tag">physically simulated earth</span>
+      </div>
+      <div class="clock" id="clock">—</div>
+    </header>
+
+    <aside id="panel-left">
+      <section class="card">
+        <h2>Field</h2>
+        <div class="layer-list" id="layers"></div>
+      </section>
+
+      <section class="card">
+        <h2>Legend</h2>
+        <div id="legend" class="legend"></div>
+      </section>
+
+      <section class="card">
+        <h2>Probe</h2>
+        <div id="probe" class="probe">
+          <p class="muted">Click the globe to sample a point.</p>
+        </div>
+      </section>
+    </aside>
+
+    <aside id="panel-right">
+      <section class="card">
+        <h2>Time</h2>
+        <div class="row"><label>Rate</label><input id="rate" type="range" min="-8" max="8" step="0.25" value="3" /></div>
+        <div class="row"><span id="rate-label" class="value">1 min/s</span></div>
+        <div class="row small muted" id="sim-time"></div>
+      </section>
+
+      <section class="card">
+        <h2>View</h2>
+        <div class="row"><label>Exposure</label><input id="exposure" type="range" min="0.3" max="2.5" step="0.01" value="1.0" /></div>
+        <div class="row"><label>Sun</label><input id="sun" type="range" min="0" max="24" step="0.1" value="12" /></div>
+        <div class="row"><label>Clouds</label><input id="clouds" type="range" min="0" max="1" step="0.01" value="0.55" /></div>
+        <div class="row"><label>Atmosphere</label><input id="atmo" type="range" min="0" max="2" step="0.01" value="1" /></div>
+        <div class="row"><button id="inspect" class="btn">Inspect mode</button></div>
+      </section>
+
+      <section class="card">
+        <h2>Physical data</h2>
+        <table class="facts" id="facts"></table>
+      </section>
+    </aside>
+
+    <footer id="hud-bottom">
+      <div id="status">initialising…</div>
+      <div class="badges">
+        <span class="badge" id="badge-fps">— fps</span>
+        <span class="badge" id="badge-tris">— tris</span>
+      </div>
+    </footer>
+  </div>
+  <script type="module" src="/src/app/main.js"></script>
+</body>
+</html>

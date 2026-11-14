@@ -1,0 +1,150 @@
+{
+  "kind": "schematic surface albedo rendering (NOT a satellite photograph)",
+  "honesty": "The colours are generated from a documented biome/altitude colour model applied to the validated DEM. They are a visualisation, not measured radiance.",
+  "source": {
+    "name": "ETOPO1-derived 10 arc-minute global relief (ice surface)",
+    "original": "NOAA ETOPO1 (doi:10.7289/V5C8276M), US Government public domain",
+    "mirror": "https://github.com/g2e/etopo10 (MIT licence)",
+    "citation": "Amante, C. and B. W. Eakins (2009), ETOPO1 1 Arc-Minute Global Relief Model, NOAA Technical Memorandum NESDIS NGDC-24."
+  },
+  "resolution": {
+    "nx": 2161,
+    "ny": 1081
+  },
+  "png": {
+    "bitDepth": 8,
+    "colourType": "RGB",
+    "compression": "deflate level 9"
+  },
+  "colourModel": {
+    "ocean": {
+      "shallow": [
+        46,
+        118,
+        148
+      ],
+      "mid": [
+        22,
+        68,
+        120
+      ],
+      "deep": [
+        8,
+        26,
+        66
+      ],
+      "shelfBreakM": 200
+    },
+    "land": {
+      "tropical": [
+        26,
+        74,
+        38
+      ],
+      "savanna": [
+        122,
+        118,
+        62
+      ],
+      "desert": [
+        186,
+        158,
+        104
+      ],
+      "temperate": [
+        72,
+        104,
+        54
+      ],
+      "grassland": [
+        124,
+        128,
+        76
+      ],
+      "boreal": [
+        42,
+        66,
+        46
+      ],
+      "tundra": [
+        116,
+        110,
+        96
+      ],
+      "rock": [
+        104,
+        96,
+        88
+      ],
+      "snow": [
+        242,
+        244,
+        248
+      ]
+    },
+    "noise": "deterministic value-noise fbm, 2 octaves - declared as decoration, not data"
+  },
+  "validation": [
+    {
+      "name": "Sahara",
+      "lat": 23,
+      "lon": 13,
+      "why": "warm land: R >> B",
+      "rgb": [
+        129,
+        124,
+        71
+      ],
+      "pass": true
+    },
+    {
+      "name": "Amazon",
+      "lat": -3,
+      "lon": -60,
+      "why": "vegetated: G dominant",
+      "rgb": [
+        46,
+        83,
+        43
+      ],
+      "pass": true
+    },
+    {
+      "name": "Central Pacific",
+      "lat": 0,
+      "lon": -150,
+      "why": "deep ocean: blue",
+      "rgb": [
+        11,
+        36,
+        79
+      ],
+      "pass": true
+    },
+    {
+      "name": "Antarctica",
+      "lat": -80,
+      "lon": 0,
+      "why": "ice: near-white",
+      "rgb": [
+        242,
+        244,
+        248
+      ],
+      "pass": true
+    },
+    {
+      "name": "Continental shelf",
+      "lat": 54,
+      "lon": 3,
+      "why": "shelf: bright blue",
+      "rgb": [
+        41,
+        107,
+        142
+      ],
+      "pass": true
+    }
+  ],
+  "bytes": 1113360
+}
