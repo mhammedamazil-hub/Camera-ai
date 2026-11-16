@@ -1,0 +1,14 @@
+{
+  "output": "out/nyc-manhattan-16x9-proxy.mp4",
+  "mode": "proxy",
+  "composition": "nyc-manhattan-16x9",
+  "size": "960x540",
+  "fps": 24,
+  "frames": 144,
+  "seconds": 6,
+  "totalTime": "3 min 47 s",
+  "renderTime": "3 min 42 s",
+  "perFrame": "1.54 s",
+  "fileSize": "1.2 MB",
+  "gl": "swangle"
+}

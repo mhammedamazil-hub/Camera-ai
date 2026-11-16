@@ -1,6 +1,11 @@
 # cinematic-3d shot projects
 node_modules
-out/
+# shot renders: keep the master + proxy, drop the intermediates
+nyc-manhattan/out/*
+!nyc-manhattan/out/nyc-manhattan-16x9.mp4
+!nyc-manhattan/out/nyc-manhattan-16x9-proxy.mp4
+!nyc-manhattan/out/nyc-manhattan-16x9.json
+!nyc-manhattan/out/nyc-manhattan-16x9-proxy.json
 review/
 *.log
 

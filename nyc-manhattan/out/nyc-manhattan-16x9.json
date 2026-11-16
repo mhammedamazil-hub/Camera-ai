@@ -1,0 +1,14 @@
+{
+  "output": "out/nyc-manhattan-16x9.mp4",
+  "mode": "final",
+  "composition": "nyc-manhattan-16x9",
+  "size": "1920x1080",
+  "fps": 24,
+  "frames": 144,
+  "seconds": 6,
+  "totalTime": "4 min 20 s",
+  "renderTime": "4 min 17 s",
+  "perFrame": "1.79 s",
+  "fileSize": "36.1 MB",
+  "gl": "swangle"
+}
