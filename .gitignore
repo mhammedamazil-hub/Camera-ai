@@ -1,0 +1,9 @@
+# cinematic-3d shot projects
+node_modules
+out/
+review/
+*.log
+
+# skill checkout (installed outside the repo, see tools/setup-toolchain.sh)
+.claude/
+.remotion/
