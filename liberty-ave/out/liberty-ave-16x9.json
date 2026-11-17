@@ -1,0 +1,14 @@
+{
+  "output": "out/liberty-ave-16x9.mp4",
+  "mode": "final",
+  "composition": "liberty-ave-16x9",
+  "size": "1920x1080",
+  "fps": 24,
+  "frames": 144,
+  "seconds": 6,
+  "totalTime": "14 min 10 s",
+  "renderTime": "14 min 6 s",
+  "perFrame": "5.88 s",
+  "fileSize": "38.6 MB",
+  "gl": "swangle"
+}

@@ -5,6 +5,16 @@ Cinematic 3D shots built in code (three.js + Remotion) with the
 
 ## Shots
 
+### [`liberty-ave/`](liberty-ave/) — street-level Manhattan at last light
+1920×1080 · 24 fps · 6 s · 35 mm · one 13 m dolly down an avenue at car height.
+Every surface is a canvas texture drawn at runtime: 2048² facades with bump-mapped
+sills and lintels, five kinds of lit storefront interior, neon fascia and blade
+signs, wet asphalt with tyre-polished lanes, fire escapes, water towers, cars,
+pedestrians, traffic signals and street lamps.
+
+Master: `liberty-ave/out/liberty-ave-16x9.mp4`
+Detail: [`liberty-ave/README.md`](liberty-ave/README.md)
+
 ### [`nyc-manhattan/`](nyc-manhattan/) — procedural Manhattan at golden hour
 1920×1080 · 24 fps · 6 s · 50 mm · single eased 200 m push-in over the West Side,
 Empire State hero mid-right, Chrysler crown on the far right, Hudson and Jersey shore
