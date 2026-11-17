@@ -3,12 +3,15 @@ node_modules
 # shot renders: keep the masters + proxy, drop the intermediates
 nyc-manhattan/out/*
 liberty-ave/out/*
+dusk-avenue/out/*
 !nyc-manhattan/out/nyc-manhattan-16x9.mp4
 !nyc-manhattan/out/nyc-manhattan-16x9-proxy.mp4
 !nyc-manhattan/out/nyc-manhattan-16x9.json
 !nyc-manhattan/out/nyc-manhattan-16x9-proxy.json
 !liberty-ave/out/liberty-ave-16x9.mp4
 !liberty-ave/out/liberty-ave-16x9.json
+!dusk-avenue/out/dusk-avenue-3x4.mp4
+!dusk-avenue/out/dusk-avenue-3x4.json
 review/
 *.log
 

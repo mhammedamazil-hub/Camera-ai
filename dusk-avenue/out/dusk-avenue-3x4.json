@@ -1,0 +1,14 @@
+{
+  "output": "out/dusk-avenue-3x4.mp4",
+  "mode": "final",
+  "composition": "dusk-avenue-3x4",
+  "size": "1080x1440",
+  "fps": 24,
+  "frames": 144,
+  "seconds": 6,
+  "totalTime": "13 min 15 s",
+  "renderTime": "13 min 11 s",
+  "perFrame": "5.49 s",
+  "fileSize": "44.7 MB",
+  "gl": "swangle"
+}
