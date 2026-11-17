@@ -13,6 +13,8 @@ surface is a canvas texture drawn at runtime, every object is procedural geometr
 | Master | `out/liberty-ave-16x9.mp4` |
 | Seed | `11` (deterministic) |
 
+![Liberty Ave, 3 s](poster.png)
+
 ## What is in the frame
 
 The camera stands in the left lane of an 18.4 m avenue, 13.8 m from each building
