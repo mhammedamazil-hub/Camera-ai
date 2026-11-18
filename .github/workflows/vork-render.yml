@@ -34,12 +34,12 @@ on:
         type: boolean
         default: true
   push:
-    # deliberately not shot-01/render*.png, so a CI commit cannot re-trigger itself
+    # Only content changes render. Editing this workflow or the setup action must
+    # not burn a 20-minute CPU render, and shot-01/render*.png is excluded so a CI
+    # commit cannot re-trigger itself.
     paths:
       - shot-01/scene.json
-      - scripts/**
-      - .github/workflows/vork-render.yml
-      - .github/actions/setup-vork/action.yml
+      - scripts/build_scene.py
 
 permissions:
   contents: write
@@ -199,7 +199,7 @@ jobs:
         run: |
           git config user.name  "vork-render[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f shot-01/render.png shot-01/render_preview.png shot-01/compare_ci.png
+          git add -f shot-01/render.png shot-01/render_preview.png shot-01/compare_ci.png compare.txt
           if git diff --cached --quiet; then
             echo "render is byte-identical to the committed one; nothing to commit"
           else
