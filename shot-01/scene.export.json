@@ -1,0 +1,272 @@
+{
+  "animation_range": null,
+  "asset_bytes": 357596,
+  "bake": null,
+  "bytes": 357596,
+  "counts": {
+    "animations": 0,
+    "buffer_bytes": 335736,
+    "cameras": 1,
+    "images": 0,
+    "joints": 0,
+    "lights": 2,
+    "materials": 8,
+    "meshes": 19,
+    "nodes": 23,
+    "skins": 0,
+    "triangles": 7274,
+    "vertices": 5176
+  },
+  "dependency_scope": "selected subtree; full scene transform dependencies evaluated",
+  "dispositions": [
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "sky",
+      "source_node": 0
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "moonlight",
+      "source_node": 1
+    },
+    {
+      "disposition": "approximated",
+      "kind": "material",
+      "meaning": "OpenPBR factors mapped to glTF metallic/roughness; BRDF highlights may differ",
+      "source": "water"
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "water",
+      "source_node": 2
+    },
+    {
+      "disposition": "approximated",
+      "kind": "material",
+      "meaning": "OpenPBR factors mapped to glTF metallic/roughness; BRDF highlights may differ",
+      "source": "basalt"
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "monolith",
+      "source_node": 3
+    },
+    {
+      "disposition": "approximated",
+      "kind": "material",
+      "meaning": "OpenPBR factors mapped to glTF metallic/roughness; BRDF highlights may differ",
+      "source": "basalt_rib"
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "buttress_0",
+      "source_node": 4
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "buttress_1",
+      "source_node": 5
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "buttress_2",
+      "source_node": 6
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "buttress_3",
+      "source_node": 7
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "buttress_4",
+      "source_node": 8
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "buttress_5",
+      "source_node": 9
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "crest_a",
+      "source_node": 10
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "crest_b",
+      "source_node": 11
+    },
+    {
+      "disposition": "approximated",
+      "kind": "material",
+      "meaning": "OpenPBR factors mapped to glTF metallic/roughness; BRDF highlights may differ",
+      "source": "crack"
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "crack_0",
+      "source_node": 12
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "crack_1",
+      "source_node": 13
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "crack_2",
+      "source_node": 14
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "crack_3",
+      "source_node": 15
+    },
+    {
+      "disposition": "approximated",
+      "kind": "material",
+      "meaning": "OpenPBR factors mapped to glTF metallic/roughness; BRDF highlights may differ",
+      "source": "figure"
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "figure",
+      "source_node": 16
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "head",
+      "source_node": 17
+    },
+    {
+      "disposition": "approximated",
+      "kind": "material",
+      "meaning": "OpenPBR factors mapped to glTF metallic/roughness; BRDF highlights may differ",
+      "source": "lantern"
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "lantern_glass",
+      "source_node": 18
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "lantern_light",
+      "source_node": 19
+    },
+    {
+      "disposition": "approximated",
+      "kind": "material",
+      "meaning": "OpenPBR factors mapped to glTF metallic/roughness; BRDF highlights may differ",
+      "source": "earthshine"
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "moon_disc",
+      "source_node": 20
+    },
+    {
+      "disposition": "approximated",
+      "kind": "material",
+      "meaning": "OpenPBR factors mapped to glTF metallic/roughness; BRDF highlights may differ",
+      "source": "moon"
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "moon",
+      "source_node": 21
+    },
+    {
+      "disposition": "evaluated",
+      "kind": "object",
+      "source": "cam",
+      "source_node": 22
+    }
+  ],
+  "fps": 24,
+  "issues": [
+    {
+      "acknowledged": true,
+      "code": "light_representation",
+      "dropped": "omitted",
+      "remediation": "replace with punctual lights or select an asset subtree; acknowledge light_representation to omit",
+      "requested": "area/environment illumination",
+      "severity": "warning",
+      "source": "sky",
+      "source_locations": [
+        "shot-01/scene.export.json: scene.nodes[0] (line 138)"
+      ],
+      "stage": "export"
+    },
+    {
+      "acknowledged": true,
+      "code": "light_extent",
+      "dropped": "punctual emitter; shadow softness changes",
+      "remediation": "set angle/radius to zero or acknowledge light_extent",
+      "requested": "finite emitter extent",
+      "severity": "warning",
+      "source": "moonlight",
+      "source_locations": [
+        "shot-01/scene.export.json: scene.nodes[1] (line 160)"
+      ],
+      "stage": "export"
+    },
+    {
+      "acknowledged": true,
+      "code": "light_extent",
+      "dropped": "punctual emitter; shadow softness changes",
+      "remediation": "set angle/radius to zero or acknowledge light_extent",
+      "requested": "finite emitter extent",
+      "severity": "warning",
+      "source": "lantern_light",
+      "source_locations": [
+        "shot-01/scene.export.json: scene.nodes[19] (line 1084)"
+      ],
+      "stage": "export"
+    }
+  ],
+  "selection": {
+    "root": null
+  },
+  "source": "shot-01/scene.export.json",
+  "source_clock": null,
+  "source_hash": "fc4444b2c342b4cd8484d6d0982f17ab77cf0b2f28877daa275136db3ebbfedb",
+  "status": "complete",
+  "target": {
+    "extensions_required": [
+      "KHR_lights_punctual",
+      "KHR_materials_emissive_strength"
+    ],
+    "extensions_used": [
+      "KHR_lights_punctual",
+      "KHR_materials_emissive_strength"
+    ],
+    "specification": "glTF 2.0"
+  },
+  "time": 0.0,
+  "version": 1,
+  "vork_version": "0.6.0 (commit d26cc6577035de589d5b49ab3cd476399c38315c; API v2)"
+}

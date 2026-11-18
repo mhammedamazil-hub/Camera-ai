@@ -1,0 +1,1183 @@
+{
+ "$schema": "https://raw.githubusercontent.com/voyager-so/vork/v0.6.0/packages/ts/scene.schema.json",
+ "version": 2,
+ "composition": {
+  "space": "3d",
+  "color_space": "Linear Rec.709",
+  "view": {
+   "program": "std/agx",
+   "inputs": {
+    "exposure": -0.15,
+    "look": "none"
+   }
+  }
+ },
+ "programs": {
+  "mist": {
+   "source": "// Marine layer: exponential-height world fog (stage-1 path transport).\n// Extinction = coefficient * exp(-falloff * (y - base_height)); dense below\n// base_height, thinning above. Zero channels stay zero where it would overflow.\nimport vork;\nstruct Inputs {\n    float3 scattering = float3(0.02);\n    float3 absorption = float3(0.0);\n    float base_height = 0.25;\n    float falloff = 0.80;\n    float anisotropy = 0.7;\n};\nfloat sc1(float c, float s) { return c == 0.0 ? 0.0 : c * s; }\nfloat3 sc3(float3 c, float s) { return float3(sc1(c.x, s), sc1(c.y, s), sc1(c.z, s)); }\nMediumCoefficients medium(MediumContext ctx, Inputs i) {\n    float s = exp(-i.falloff * (ctx.world_position.y - i.base_height));\n    MediumCoefficients m;\n    m.scattering = sc3(i.scattering, s);\n    m.absorption = sc3(i.absorption, s);\n    m.emission = float3(0.0);\n    m.anisotropy = i.anisotropy;\n    return m;\n}\n"
+  }
+ },
+ "materials": {
+  "cam": {
+   "program": "std/camera",
+   "inputs": {
+    "lens": 50.0,
+    "sensor_width": 36.0,
+    "sensor_height": 15.12,
+    "fit": "horizontal",
+    "clip_start": 0.5,
+    "clip_end": 4000.0
+   }
+  },
+  "water": {
+   "program": "std/openpbr",
+   "inputs": {
+    "base_color": [
+     0.0045,
+     0.0075,
+     0.0105
+    ],
+    "specular_roughness": 0.22,
+    "base_metalness": 0.0,
+    "specular_weight": 1.0
+   }
+  },
+  "basalt": {
+   "program": "std/openpbr",
+   "inputs": {
+    "base_color": [
+     0.048,
+     0.047,
+     0.046
+    ],
+    "specular_roughness": 0.63,
+    "base_metalness": 0.0
+   }
+  },
+  "basalt_rib": {
+   "program": "std/openpbr",
+   "inputs": {
+    "base_color": [
+     0.031,
+     0.03,
+     0.03
+    ],
+    "specular_roughness": 0.72,
+    "base_metalness": 0.0
+   }
+  },
+  "crack": {
+   "program": "std/openpbr",
+   "inputs": {
+    "base_color": [
+     0.006,
+     0.006,
+     0.007
+    ],
+    "specular_roughness": 0.85
+   }
+  },
+  "figure": {
+   "program": "std/openpbr",
+   "inputs": {
+    "base_color": [
+     0.017,
+     0.018,
+     0.02
+    ],
+    "specular_roughness": 0.78
+   }
+  },
+  "lantern": {
+   "program": "std/openpbr",
+   "inputs": {
+    "base_color": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "specular_roughness": 0.4,
+    "emission_luminance": 26000.0,
+    "emission_color": [
+     1.0,
+     0.52,
+     0.15
+    ]
+   }
+  },
+  "earthshine": {
+   "program": "std/openpbr",
+   "inputs": {
+    "base_color": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "emission_luminance": 900.0,
+    "emission_color": [
+     0.62,
+     0.68,
+     0.8
+    ]
+   }
+  },
+  "moon": {
+   "program": "std/openpbr",
+   "inputs": {
+    "base_color": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "emission_luminance": 11000.0,
+    "emission_color": [
+     1.0,
+     0.965,
+     0.92
+    ]
+   }
+  },
+  "mist": {
+   "program": "mist",
+   "inputs": {
+    "scattering": [
+     0.0125,
+     0.014,
+     0.016
+    ],
+    "absorption": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "base_height": 0.25,
+    "falloff": 0.8,
+    "anisotropy": 0.7
+   }
+  }
+ },
+ "nodes": [
+  {
+   "type": "light",
+   "name": "sky",
+   "shape": "environment",
+   "energy": 1.0,
+   "color": [
+    1,
+    1,
+    1
+   ],
+   "medium": "mist",
+   "material": {
+    "program": "std/sky",
+    "inputs": {
+     "sun_elevation": -0.062,
+     "sun_rotation": 5.8,
+     "altitude": 60.0,
+     "air_density": 1.0,
+     "aerosol_density": 1.7,
+     "ozone_density": 1.0
+    }
+   }
+  },
+  {
+   "type": "light",
+   "name": "moonlight",
+   "shape": "sun",
+   "energy": 0.045,
+   "color": [
+    0.6,
+    0.75,
+    1.0
+   ],
+   "angle": 0.009,
+   "translation": [
+    -52.0,
+    34.0,
+    -18.0
+   ],
+   "target": [
+    -0.7,
+    6.0,
+    -60.0
+   ]
+  },
+  {
+   "type": "mesh",
+   "name": "water",
+   "geometry": {
+    "std": "grid",
+    "size": [
+     6000,
+     6000
+    ]
+   },
+   "materials": [
+    "water"
+   ]
+  },
+  {
+   "type": "mesh",
+   "name": "monolith",
+   "materials": [
+    "basalt"
+   ],
+   "translation": [
+    -0.7,
+    0.0,
+    -60.0
+   ],
+   "rotation": {
+    "euler": [
+     0,
+     0.1,
+     0
+    ]
+   },
+   "geometry": {
+    "std": "extrude",
+    "outline": [
+     [
+      -4.27,
+      0.0
+     ],
+     [
+      -4.14,
+      1.2
+     ],
+     [
+      -4.2,
+      2.6
+     ],
+     [
+      -4.14,
+      4.0
+     ],
+     [
+      -4.1,
+      5.2
+     ],
+     [
+      -4.16,
+      6.4
+     ],
+     [
+      -4.06,
+      7.6
+     ],
+     [
+      -4.0,
+      8.4
+     ],
+     [
+      -3.66,
+      9.0
+     ],
+     [
+      -3.72,
+      9.8
+     ],
+     [
+      -3.71,
+      10.6
+     ],
+     [
+      -3.52,
+      11.1
+     ],
+     [
+      -3.5,
+      11.7
+     ],
+     [
+      -3.3,
+      12.1
+     ],
+     [
+      -3.27,
+      12.56
+     ],
+     [
+      -2.96,
+      12.74
+     ],
+     [
+      -2.3,
+      12.6
+     ],
+     [
+      -1.9,
+      12.7
+     ],
+     [
+      -1.35,
+      12.4
+     ],
+     [
+      -0.98,
+      12.2
+     ],
+     [
+      0.57,
+      12.02
+     ],
+     [
+      1.82,
+      11.44
+     ],
+     [
+      2.13,
+      10.84
+     ],
+     [
+      2.4,
+      10.1
+     ],
+     [
+      2.72,
+      9.2
+     ],
+     [
+      2.82,
+      7.8
+     ],
+     [
+      2.9,
+      6.6
+     ],
+     [
+      3.22,
+      6.1
+     ],
+     [
+      3.34,
+      5.2
+     ],
+     [
+      3.38,
+      4.2
+     ],
+     [
+      3.55,
+      3.6
+     ],
+     [
+      3.68,
+      2.2
+     ],
+     [
+      3.72,
+      1.0
+     ],
+     [
+      3.74,
+      0.0
+     ]
+    ],
+    "depth": 2.9,
+    "bevel_depth": 0.04,
+    "bevel_resolution": 2
+   }
+  },
+  {
+   "type": "mesh",
+   "name": "buttress_0",
+   "materials": [
+    "basalt_rib"
+   ],
+   "translation": [
+    -0.7,
+    0.0,
+    -59.7
+   ],
+   "rotation": {
+    "euler": [
+     0,
+     0.1,
+     0
+    ]
+   },
+   "geometry": {
+    "std": "extrude",
+    "outline": [
+     [
+      -3.95,
+      0.0
+     ],
+     [
+      -3.878,
+      2.975
+     ],
+     [
+      -3.806,
+      6.545000000000001
+     ],
+     [
+      -3.746,
+      9.520000000000001
+     ],
+     [
+      -3.71,
+      11.9
+     ],
+     [
+      -3.5925,
+      11.543
+     ],
+     [
+      -3.0599999999999996,
+      10.234
+     ],
+     [
+      -3.3,
+      5.355
+     ],
+     [
+      -3.3,
+      0.0
+     ]
+    ],
+    "depth": 3.5,
+    "bevel_depth": 0.04,
+    "bevel_resolution": 2
+   }
+  },
+  {
+   "type": "mesh",
+   "name": "buttress_1",
+   "materials": [
+    "basalt_rib"
+   ],
+   "translation": [
+    -0.7,
+    0.0,
+    -59.76
+   ],
+   "rotation": {
+    "euler": [
+     0,
+     0.1,
+     0
+    ]
+   },
+   "geometry": {
+    "std": "extrude",
+    "outline": [
+     [
+      -2.95,
+      0.0
+     ],
+     [
+      -2.992,
+      3.05
+     ],
+     [
+      -3.0340000000000003,
+      6.71
+     ],
+     [
+      -3.0690000000000004,
+      9.76
+     ],
+     [
+      -3.0900000000000003,
+      12.2
+     ],
+     [
+      -2.565,
+      11.834
+     ],
+     [
+      -2.39,
+      10.491999999999999
+     ],
+     [
+      -2.25,
+      5.49
+     ],
+     [
+      -2.25,
+      0.0
+     ]
+    ],
+    "depth": 3.38,
+    "bevel_depth": 0.04,
+    "bevel_resolution": 2
+   }
+  },
+  {
+   "type": "mesh",
+   "name": "buttress_2",
+   "materials": [
+    "basalt_rib"
+   ],
+   "translation": [
+    -0.7,
+    0.0,
+    -59.66
+   ],
+   "rotation": {
+    "euler": [
+     0,
+     0.1,
+     0
+    ]
+   },
+   "geometry": {
+    "std": "extrude",
+    "outline": [
+     [
+      -1.8,
+      0.0
+     ],
+     [
+      -1.77,
+      3.025
+     ],
+     [
+      -1.74,
+      6.655
+     ],
+     [
+      -1.715,
+      9.68
+     ],
+     [
+      -1.7,
+      12.1
+     ],
+     [
+      -1.415,
+      11.737
+     ],
+     [
+      -1.0,
+      10.405999999999999
+     ],
+     [
+      -1.1,
+      5.445
+     ],
+     [
+      -1.1,
+      0.0
+     ]
+    ],
+    "depth": 3.58,
+    "bevel_depth": 0.04,
+    "bevel_resolution": 2
+   }
+  },
+  {
+   "type": "mesh",
+   "name": "buttress_3",
+   "materials": [
+    "basalt_rib"
+   ],
+   "translation": [
+    -0.7,
+    0.0,
+    -59.74
+   ],
+   "rotation": {
+    "euler": [
+     0,
+     0.1,
+     0
+    ]
+   },
+   "geometry": {
+    "std": "extrude",
+    "outline": [
+     [
+      -0.65,
+      0.0
+     ],
+     [
+      -0.602,
+      2.9
+     ],
+     [
+      -0.554,
+      6.38
+     ],
+     [
+      -0.514,
+      9.28
+     ],
+     [
+      -0.49,
+      11.6
+     ],
+     [
+      -0.26499999999999996,
+      11.251999999999999
+     ],
+     [
+      0.21000000000000002,
+      9.975999999999999
+     ],
+     [
+      0.05,
+      5.22
+     ],
+     [
+      0.05,
+      0.0
+     ]
+    ],
+    "depth": 3.42,
+    "bevel_depth": 0.04,
+    "bevel_resolution": 2
+   }
+  },
+  {
+   "type": "mesh",
+   "name": "buttress_4",
+   "materials": [
+    "basalt_rib"
+   ],
+   "translation": [
+    -0.7,
+    0.0,
+    -59.7
+   ],
+   "rotation": {
+    "euler": [
+     0,
+     0.1,
+     0
+    ]
+   },
+   "geometry": {
+    "std": "extrude",
+    "outline": [
+     [
+      0.6,
+      0.0
+     ],
+     [
+      0.564,
+      2.4
+     ],
+     [
+      0.528,
+      5.28
+     ],
+     [
+      0.498,
+      7.68
+     ],
+     [
+      0.48,
+      9.6
+     ],
+     [
+      1.0675,
+      9.312
+     ],
+     [
+      1.33,
+      8.256
+     ],
+     [
+      1.45,
+      4.32
+     ],
+     [
+      1.45,
+      0.0
+     ]
+    ],
+    "depth": 3.5,
+    "bevel_depth": 0.04,
+    "bevel_resolution": 2
+   }
+  },
+  {
+   "type": "mesh",
+   "name": "buttress_5",
+   "materials": [
+    "basalt_rib"
+   ],
+   "translation": [
+    -0.7,
+    0.0,
+    -59.78
+   ],
+   "rotation": {
+    "euler": [
+     0,
+     0.1,
+     0
+    ]
+   },
+   "geometry": {
+    "std": "extrude",
+    "outline": [
+     [
+      1.85,
+      0.0
+     ],
+     [
+      1.8800000000000001,
+      1.6
+     ],
+     [
+      1.9100000000000001,
+      3.5200000000000005
+     ],
+     [
+      1.935,
+      5.120000000000001
+     ],
+     [
+      1.9500000000000002,
+      6.4
+     ],
+     [
+      2.3175000000000003,
+      6.208
+     ],
+     [
+      2.8000000000000003,
+      5.5040000000000004
+     ],
+     [
+      2.7,
+      2.8800000000000003
+     ],
+     [
+      2.7,
+      0.0
+     ]
+    ],
+    "depth": 3.34,
+    "bevel_depth": 0.04,
+    "bevel_resolution": 2
+   }
+  },
+  {
+   "type": "mesh",
+   "name": "crest_a",
+   "materials": [
+    "basalt"
+   ],
+   "translation": [
+    -0.7,
+    0.0,
+    -59.94
+   ],
+   "rotation": {
+    "euler": [
+     0,
+     0.05,
+     0
+    ]
+   },
+   "geometry": {
+    "std": "extrude",
+    "outline": [
+     [
+      -3.36,
+      12.2
+     ],
+     [
+      -2.98,
+      12.86
+     ],
+     [
+      -2.1,
+      12.7
+     ],
+     [
+      -1.45,
+      12.34
+     ],
+     [
+      -2.35,
+      12.1
+     ]
+    ],
+    "depth": 2.7,
+    "bevel_depth": 0.04,
+    "bevel_resolution": 2
+   }
+  },
+  {
+   "type": "mesh",
+   "name": "crest_b",
+   "materials": [
+    "basalt"
+   ],
+   "translation": [
+    -0.7,
+    0.0,
+    -59.96
+   ],
+   "rotation": {
+    "euler": [
+     0,
+     0.15000000000000002,
+     0
+    ]
+   },
+   "geometry": {
+    "std": "extrude",
+    "outline": [
+     [
+      -0.2,
+      11.9
+     ],
+     [
+      0.6,
+      11.72
+     ],
+     [
+      1.05,
+      11.1
+     ],
+     [
+      0.2,
+      11.3
+     ]
+    ],
+    "depth": 2.7,
+    "bevel_depth": 0.04,
+    "bevel_resolution": 2
+   }
+  },
+  {
+   "type": "mesh",
+   "name": "crack_0",
+   "materials": [
+    "crack"
+   ],
+   "translation": [
+    -0.7,
+    0.0,
+    -59.38
+   ],
+   "rotation": {
+    "euler": [
+     0,
+     0.1,
+     0
+    ]
+   },
+   "geometry": {
+    "std": "extrude",
+    "outline": [
+     [
+      -2.55,
+      1.1
+     ],
+     [
+      -2.4499999999999997,
+      5.75
+     ],
+     [
+      -2.55,
+      10.4
+     ],
+     [
+      -2.61,
+      10.4
+     ],
+     [
+      -2.69,
+      5.75
+     ],
+     [
+      -2.61,
+      1.1
+     ]
+    ],
+    "depth": 3.2,
+    "bevel_depth": 0.04,
+    "bevel_resolution": 2
+   }
+  },
+  {
+   "type": "mesh",
+   "name": "crack_1",
+   "materials": [
+    "crack"
+   ],
+   "translation": [
+    -0.7,
+    0.0,
+    -59.38
+   ],
+   "rotation": {
+    "euler": [
+     0,
+     0.1,
+     0
+    ]
+   },
+   "geometry": {
+    "std": "extrude",
+    "outline": [
+     [
+      -1.2,
+      2.2
+     ],
+     [
+      -1.0999999999999999,
+      7.199999999999999
+     ],
+     [
+      -1.2,
+      12.2
+     ],
+     [
+      -1.25,
+      12.2
+     ],
+     [
+      -1.33,
+      7.199999999999999
+     ],
+     [
+      -1.25,
+      2.2
+     ]
+    ],
+    "depth": 3.2,
+    "bevel_depth": 0.04,
+    "bevel_resolution": 2
+   }
+  },
+  {
+   "type": "mesh",
+   "name": "crack_2",
+   "materials": [
+    "crack"
+   ],
+   "translation": [
+    -0.7,
+    0.0,
+    -59.38
+   ],
+   "rotation": {
+    "euler": [
+     0,
+     0.1,
+     0
+    ]
+   },
+   "geometry": {
+    "std": "extrude",
+    "outline": [
+     [
+      0.35,
+      0.9
+     ],
+     [
+      0.44999999999999996,
+      4.95
+     ],
+     [
+      0.35,
+      9.0
+     ],
+     [
+      0.295,
+      9.0
+     ],
+     [
+      0.21499999999999997,
+      4.95
+     ],
+     [
+      0.295,
+      0.9
+     ]
+    ],
+    "depth": 3.2,
+    "bevel_depth": 0.04,
+    "bevel_resolution": 2
+   }
+  },
+  {
+   "type": "mesh",
+   "name": "crack_3",
+   "materials": [
+    "crack"
+   ],
+   "translation": [
+    -0.7,
+    0.0,
+    -59.38
+   ],
+   "rotation": {
+    "euler": [
+     0,
+     0.1,
+     0
+    ]
+   },
+   "geometry": {
+    "std": "extrude",
+    "outline": [
+     [
+      1.7,
+      0.6
+     ],
+     [
+      1.8,
+      3.4
+     ],
+     [
+      1.7,
+      6.2
+     ],
+     [
+      1.65,
+      6.2
+     ],
+     [
+      1.5699999999999998,
+      3.4
+     ],
+     [
+      1.65,
+      0.6
+     ]
+    ],
+    "depth": 3.2,
+    "bevel_depth": 0.04,
+    "bevel_resolution": 2
+   }
+  },
+  {
+   "type": "mesh",
+   "name": "figure",
+   "materials": [
+    "figure"
+   ],
+   "translation": [
+    1.95,
+    0.86,
+    -57.8
+   ],
+   "geometry": {
+    "std": "capsule",
+    "radius": 0.19,
+    "height": 1.72
+   }
+  },
+  {
+   "type": "mesh",
+   "name": "head",
+   "materials": [
+    "figure"
+   ],
+   "translation": [
+    1.95,
+    1.85,
+    -57.8
+   ],
+   "geometry": {
+    "std": "sphere",
+    "radius": 0.115,
+    "segments": 24,
+    "rings": 16
+   }
+  },
+  {
+   "type": "mesh",
+   "name": "lantern_glass",
+   "materials": [
+    "lantern"
+   ],
+   "translation": [
+    2.18,
+    1.22,
+    -57.65
+   ],
+   "geometry": {
+    "std": "sphere",
+    "radius": 0.075,
+    "segments": 24,
+    "rings": 16
+   }
+  },
+  {
+   "type": "light",
+   "name": "lantern_light",
+   "shape": "point",
+   "energy": 6.0,
+   "color": [
+    1.0,
+    0.55,
+    0.21
+   ],
+   "radius": 0.06,
+   "translation": [
+    2.18,
+    1.22,
+    -57.65
+   ]
+  },
+  {
+   "type": "mesh",
+   "name": "moon_disc",
+   "materials": [
+    "earthshine"
+   ],
+   "translation": [
+    -89.06,
+    86.69,
+    -500.6
+   ],
+   "geometry": {
+    "std": "extrude",
+    "depth": 0.02,
+    "d": "M 0 2.4 A 2.4 2.4 0 1 1 0 -2.4 A 2.4 2.4 0 1 1 0 2.4 Z"
+   }
+  },
+  {
+   "type": "mesh",
+   "name": "moon",
+   "materials": [
+    "moon"
+   ],
+   "translation": [
+    -89.06,
+    86.69,
+    -500.0
+   ],
+   "geometry": {
+    "std": "extrude",
+    "depth": 0.02,
+    "d": "M 0 2.4 A 2.4 2.4 0 0 1 0 -2.4 A 2.76 2.76 0 0 0 0 2.4 Z"
+   }
+  },
+  {
+   "type": "camera",
+   "name": "cam",
+   "material": "cam",
+   "translation": [
+    0.0,
+    1.2,
+    0.0
+   ],
+   "target": [
+    0.0,
+    1.9076018479630408,
+    -10.0
+   ]
+  }
+ ],
+ "render": {
+  "resolution": [
+   1600,
+   672
+  ],
+  "duration": 1,
+  "camera": "cam",
+  "background": "environment"
+ }
+}
