@@ -77,7 +77,7 @@ nodes = []
 nodes.append({"type": "light", "name": "sky", "shape": "environment", "energy": 2.0,
               "color": [1, 1, 1], "medium": "mist",
               "material": {"program": "std/sky", "inputs": {
-                  "sun_elevation": -0.100, "sun_rotation": 5.80, "altitude": 60.0,
+                  "sun_elevation": -0.100, "sun_rotation": 6.40, "altitude": 60.0,
                   "air_density": 1.0, "aerosol_density": 0.80, "ozone_density": 1.0}}})
 # --- weak cool key from the left: shapes the slab, rims its left edge
 nodes.append({"type": "light", "name": "moonlight", "shape": "sun", "energy": 0.045,

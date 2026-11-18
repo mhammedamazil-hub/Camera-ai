@@ -172,7 +172,7 @@
     "program": "std/sky",
     "inputs": {
      "sun_elevation": -0.1,
-     "sun_rotation": 5.8,
+     "sun_rotation": 6.4,
      "altitude": 60.0,
      "air_density": 1.0,
      "aerosol_density": 0.8,

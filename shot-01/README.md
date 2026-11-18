@@ -130,6 +130,42 @@ Lighting did **not** survive, and the previz could not have caught it:
 That is the loop finally closing on the renderer that matters: **compare the real
 frame, name the largest defect, change the parameter responsible, re-render.**
 
+## Calibrating against the renderer (CI, iterations 08-10)
+
+One blind correction over-shot badly (mean 0.041, 58% near-black), so exposure
+sweeps replaced guesswork: one CI run renders several variants at 800 px and
+commits a labelled contact sheet with mean luma, near-black and clipped fractions
+per tile.
+
+**Sweep 1 — is exposure even the dial?** At `e = -0.90 … 0.00` the mean ran
+0.059 … 0.092 against the plate's 0.261. No: the scene was under-lit at the
+source, so the sky and the environment light's energy are the levers.
+
+**Sweep 2 — environment energy** (fixed `e=-0.50, sun=-0.10, aer=0.80`):
+
+| E | mean luma | vs plate |
+|---|---|---|
+| 1.0 | 0.169 | −0.092 |
+| **2.0** | **0.236** | **−0.026** |
+| 4.0 | 0.328 | +0.067 |
+
+**Sweep 3 — sun azimuth** (`std/sky.sun_rotation`, the one field with no
+documented convention; fixed `e=-0.50, sun=-0.10, aer=0.80, E=2.0`):
+
+| sun_rotation | mean luma | what the sky did |
+|---|---|---|
+| 4.60 | 0.073 | sun behind the camera, frame nearly black |
+| 5.20 | 0.141 | warm afterglow low in frame |
+| **6.40** | **0.271** | **anti-solar blue above, afterglow band on the left** |
+| 7.00 | 0.206 | glow swinging out of frame, dimming |
+
+Best match is `exposure -0.50`, `energy 2.0`, `sun_elevation -0.10`,
+`sun_rotation 6.40` — mean 0.271 against the plate's 0.261.
+
+Also fixed on the way: vork 0.6.0 rendered the moon's two-arc SVG `d` path as a
+full disc, so the crescent is now sampled into a 56-point polygon (verified from
+vork's own exported triangles: lit limb left, 72 vs 8 px).
+
 ## What is verified, and what is not
 
 **Verified here:** `vork check` passes; geometry exports cleanly (16 meshes); the
