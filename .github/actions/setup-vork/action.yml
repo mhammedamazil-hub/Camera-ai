@@ -31,6 +31,17 @@ runs:
           sudo apt-get install -y --no-install-recommends libgomp1 ffmpeg vulkan-tools || true
         fi
 
+    - name: Node 22.18+ (vork's engine requirement)
+      uses: actions/setup-node@v4
+      with:
+        node-version: "22.18"
+
+    - name: Cache the npm download
+      uses: actions/cache@v4
+      with:
+        path: ~/.npm
+        key: npm-vork-${{ inputs.version }}-${{ runner.os }}
+
     - name: Install vork
       shell: bash
       run: |
