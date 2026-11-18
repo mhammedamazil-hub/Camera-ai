@@ -1,11 +1,11 @@
 {
   "animation_range": null,
-  "asset_bytes": 357600,
+  "asset_bytes": 295448,
   "bake": null,
-  "bytes": 357600,
+  "bytes": 295448,
   "counts": {
     "animations": 0,
-    "buffer_bytes": 335736,
+    "buffer_bytes": 273576,
     "cameras": 1,
     "images": 0,
     "joints": 0,
@@ -14,8 +14,8 @@
     "meshes": 19,
     "nodes": 23,
     "skins": 0,
-    "triangles": 7274,
-    "vertices": 5176
+    "triangles": 6238,
+    "vertices": 4140
   },
   "dependency_scope": "selected subtree; full scene transform dependencies evaluated",
   "dispositions": [
@@ -253,7 +253,7 @@
   },
   "source": "shot-01/scene.export.json",
   "source_clock": null,
-  "source_hash": "531f273a005ae94b3265b5f5abc21c056092303be8ad878e46beb99a06511393",
+  "source_hash": "f7922ea172ff1fba53a9da68e96578573006c382cc1dad36c21e3df019d8d585",
   "status": "complete",
   "target": {
     "extensions_required": [

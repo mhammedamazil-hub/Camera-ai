@@ -35,9 +35,12 @@ on:
         type: boolean
         default: true
       sweep_exposures:
-        description: Instead of one frame, render an exposure sweep contact sheet
+        description: Instead of one frame, render a settings sweep contact sheet
         type: boolean
         default: false
+      sweep_variants:
+        description: Space-separated variants, e.g. "e=-0.5,sun=-0.10,aer=0.8,E=1"
+        default: 
   push:
     # Only content changes render. Editing this workflow or the setup action must not
     # burn a CPU render, and shot-01/render*.png is excluded so a CI commit cannot
@@ -106,12 +109,14 @@ jobs:
           vork setup --skip-warmup 2>&1 | tee setup.log
           echo "--- vork setup exit: ${PIPESTATUS[0]} ---"
 
-      - name: Exposure sweep
+      - name: Settings sweep
         if: inputs.sweep_exposures
+        env:
+          SWEEP_VARIANTS: ${{ inputs.sweep_variants }}
         run: |
           set -o pipefail
           python3 -m pip install --quiet numpy pillow
-          python3 scripts/sweep_exposure.py -0.9 -0.6 -0.3 0.0 2>&1 | tee sweep.log
+          python3 scripts/sweep_exposure.py 2>&1 | tee sweep.log
 
       - name: Smoke frame (same profile, so the kernel compile is shared)
         if: ${{ !inputs.sweep_exposures }}

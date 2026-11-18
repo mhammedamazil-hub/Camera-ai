@@ -137,20 +137,27 @@ nodes += [
    "translation": [FIG_X + 0.23, 1.22, FIG_Z + 0.15]},
 ]
 
-# --- crescent moon: 0.45 deg disc, 500 m out, aimed by the plate's coordinates
+# --- crescent moon: explicit arc polygon (an SVG "A" path rendered as a disc
+#     in vork 0.6.0, so the outline is sampled here instead)
+def arc(cx, r, t0, t1, n=28):
+    return [[round(cx + r * math.cos(t0 + (t1 - t0) * i / (n - 1)), 4),
+             round(r * math.sin(t0 + (t1 - t0) * i / (n - 1)), 4)] for i in range(n)]
+
 MOON_R = 2.4
+INNER = 1.15 * MOON_R                       # bigger radius -> thinner crescent
+XC = -math.sqrt(INNER * INNER - MOON_R * MOON_R)
+TH0 = math.acos(-XC / INNER)
+CRESCENT = [[-x, y] for x, y in
+            arc(0.0, MOON_R, math.pi / 2, -math.pi / 2) + arc(XC, INNER, -TH0, TH0)]
 mx = (0.2526 - 0.5) * 2 * TAN_X * 500
 my = EYE[1] + (0.5 - 0.1686) * 2 * TAN_Y * 500 + math.tan(PITCH) * 500
 nodes.append({"type": "mesh", "name": "moon_disc", "materials": ["earthshine"],
               "translation": [round(mx, 2), round(my, 2), -500.6],
               "geometry": {"std": "extrude", "depth": 0.02,
-                           "d": f"M 0 {MOON_R} A {MOON_R} {MOON_R} 0 1 1 0 {-MOON_R} "
-                                f"A {MOON_R} {MOON_R} 0 1 1 0 {MOON_R} Z"}})
+                           "outline": arc(0.0, MOON_R, 0.0, 2 * math.pi, 48)}})
 nodes.append({"type": "mesh", "name": "moon", "materials": ["moon"],
               "translation": [round(mx, 2), round(my, 2), -500.0],
-              "geometry": {"std": "extrude", "depth": 0.02,
-                           "d": f"M 0 {MOON_R} A {MOON_R} {MOON_R} 0 0 1 0 {-MOON_R} "
-                                f"A {MOON_R*1.15} {MOON_R*1.15} 0 0 0 0 {MOON_R} Z"}})
+              "geometry": {"std": "extrude", "depth": 0.02, "outline": CRESCENT}})
 
 nodes.append({"type": "camera", "name": "cam", "material": "cam",
               "translation": EYE, "target": aim(EYE, PITCH)})
