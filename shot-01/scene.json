@@ -14,7 +14,7 @@
  },
  "programs": {
   "mist": {
-   "source": "// Marine layer: exponential-height world fog (stage-1 path transport).\n// Extinction = coefficient * exp(-falloff * (y - base_height)); dense below\n// base_height, thinning above. Zero channels stay zero where it would overflow.\nimport vork;\nstruct Inputs {\n    float3 scattering = float3(0.02);\n    float3 absorption = float3(0.0);\n    float base_height = 0.25;\n    float falloff = 0.80;\n    float anisotropy = 0.7;\n};\nfloat sc1(float c, float s) { return c == 0.0 ? 0.0 : c * s; }\nfloat3 sc3(float3 c, float s) { return float3(sc1(c.x, s), sc1(c.y, s), sc1(c.z, s)); }\nMediumCoefficients medium(MediumContext ctx, Inputs i) {\n    float s = exp(-i.falloff * (ctx.world_position.y - i.base_height));\n    MediumCoefficients m;\n    m.scattering = sc3(i.scattering, s);\n    m.absorption = sc3(i.absorption, s);\n    m.emission = float3(0.0);\n    m.anisotropy = i.anisotropy;\n    return m;\n}\n"
+   "source": "// Marine layer: exponential-height world fog (stage-1 path transport).\n// Extinction = coefficient * exp(-falloff * (y - base_height)); dense below\n// base_height, thinning above. Zero channels stay zero where it would overflow.\nimport vork;\nstruct Inputs {\n    float3 scattering = float3(0.02);\n    float3 absorption = float3(0.0);\n    float base_height = 0.45;\n    float falloff = 0.55;\n    float anisotropy = 0.7;\n};\nfloat sc1(float c, float s) { return c == 0.0 ? 0.0 : c * s; }\nfloat3 sc3(float3 c, float s) { return float3(sc1(c.x, s), sc1(c.y, s), sc1(c.z, s)); }\nMediumCoefficients medium(MediumContext ctx, Inputs i) {\n    float s = exp(-i.falloff * (ctx.world_position.y - i.base_height));\n    MediumCoefficients m;\n    m.scattering = sc3(i.scattering, s);\n    m.absorption = sc3(i.absorption, s);\n    m.emission = float3(0.0);\n    m.anisotropy = i.anisotropy;\n    return m;\n}\n"
   }
  },
  "materials": {
@@ -37,7 +37,7 @@
      0.0075,
      0.0105
     ],
-    "specular_roughness": 0.15,
+    "specular_roughness": 0.06,
     "base_metalness": 0.0,
     "specular_weight": 1.0
    }
@@ -113,7 +113,7 @@
      0.0,
      0.0
     ],
-    "emission_luminance": 70.0,
+    "emission_luminance": 3.0,
     "emission_color": [
      0.62,
      0.68,
@@ -141,17 +141,17 @@
    "program": "mist",
    "inputs": {
     "scattering": [
-     0.0045,
-     0.005,
-     0.0058
+     0.008,
+     0.0088,
+     0.01
     ],
     "absorption": [
      0.0,
      0.0,
      0.0
     ],
-    "base_height": 0.25,
-    "falloff": 0.8,
+    "base_height": 0.45,
+    "falloff": 0.55,
     "anisotropy": 0.7
    }
   }
@@ -161,7 +161,7 @@
    "type": "light",
    "name": "sky",
    "shape": "environment",
-   "energy": 2.0,
+   "energy": 2.8,
    "color": [
     1,
     1,
@@ -171,11 +171,11 @@
    "material": {
     "program": "std/sky",
     "inputs": {
-     "sun_elevation": -0.1,
+     "sun_elevation": -0.155,
      "sun_rotation": 6.4,
      "altitude": 60.0,
      "air_density": 1.0,
-     "aerosol_density": 0.8,
+     "aerosol_density": 0.55,
      "ozone_density": 1.0
     }
    }
@@ -184,10 +184,10 @@
    "type": "light",
    "name": "moonlight",
    "shape": "sun",
-   "energy": 0.045,
+   "energy": 0.55,
    "color": [
-    0.6,
-    0.75,
+    0.55,
+    0.72,
     1.0
    ],
    "angle": 0.009,

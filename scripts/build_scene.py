@@ -29,8 +29,8 @@ import vork;
 struct Inputs {
     float3 scattering = float3(0.02);
     float3 absorption = float3(0.0);
-    float base_height = 0.25;
-    float falloff = 0.80;
+    float base_height = 0.45;
+    float falloff = 0.55;
     float anisotropy = 0.7;
 };
 float sc1(float c, float s) { return c == 0.0 ? 0.0 : c * s; }
@@ -74,14 +74,14 @@ Y_UNIT = 2.0 / 6.0   # mm of image per metre at 60 m, kept for the notes
 
 nodes = []
 # --- environment: twilight sky + world fog on the single environment light
-nodes.append({"type": "light", "name": "sky", "shape": "environment", "energy": 2.0,
+nodes.append({"type": "light", "name": "sky", "shape": "environment", "energy": 2.8,
               "color": [1, 1, 1], "medium": "mist",
               "material": {"program": "std/sky", "inputs": {
-                  "sun_elevation": -0.100, "sun_rotation": 6.40, "altitude": 60.0,
-                  "air_density": 1.0, "aerosol_density": 0.80, "ozone_density": 1.0}}})
+                  "sun_elevation": -0.155, "sun_rotation": 6.40, "altitude": 60.0,
+                  "air_density": 1.0, "aerosol_density": 0.55, "ozone_density": 1.0}}})
 # --- weak cool key from the left: shapes the slab, rims its left edge
-nodes.append({"type": "light", "name": "moonlight", "shape": "sun", "energy": 0.045,
-              "color": [0.60, 0.75, 1.0], "angle": 0.009,
+nodes.append({"type": "light", "name": "moonlight", "shape": "sun", "energy": 0.55,
+              "color": [0.55, 0.72, 1.0], "angle": 0.009,
               "translation": [-52.0, 34.0, -18.0], "target": [-0.7, 6.0, STONE_Z]})
 # --- mirror-flat tidal water
 nodes.append({"type": "mesh", "name": "water", "geometry": {"std": "grid", "size": [6000, 6000]},
@@ -173,7 +173,7 @@ scene = {
       "lens": LENS, "sensor_width": SENSOR_W, "sensor_height": round(SENSOR_H, 3),
       "fit": "horizontal", "clip_start": 0.5, "clip_end": 4000.0}},
    "water": {"program": "std/openpbr", "inputs": {
-      "base_color": [0.0045, 0.0075, 0.0105], "specular_roughness": 0.15,
+      "base_color": [0.0045, 0.0075, 0.0105], "specular_roughness": 0.06,
       "base_metalness": 0.0, "specular_weight": 1.0}},
    "basalt": {"program": "std/openpbr", "inputs": {
       "base_color": [0.048, 0.047, 0.046], "specular_roughness": 0.63, "base_metalness": 0.0}},
@@ -188,13 +188,13 @@ scene = {
       "emission_luminance": 9000.0, "emission_color": [1.0, 0.52, 0.15]}},
    "earthshine": {"program": "std/openpbr", "inputs": {
       "base_color": [0.0, 0.0, 0.0],
-      "emission_luminance": 70.0, "emission_color": [0.62, 0.68, 0.80]}},
+      "emission_luminance": 3.0, "emission_color": [0.62, 0.68, 0.80]}},
    "moon": {"program": "std/openpbr", "inputs": {
       "base_color": [0.0, 0.0, 0.0],
       "emission_luminance": 2400.0, "emission_color": [1.0, 0.965, 0.92]}},
    "mist": {"program": "mist", "inputs": {
-      "scattering": [0.0045, 0.0050, 0.0058], "absorption": [0.0, 0.0, 0.0],
-      "base_height": 0.25, "falloff": 0.80, "anisotropy": 0.7}}
+      "scattering": [0.0080, 0.0088, 0.0100], "absorption": [0.0, 0.0, 0.0],
+      "base_height": 0.45, "falloff": 0.55, "anisotropy": 0.7}}
  },
  "nodes": nodes,
  "render": {"resolution": RES, "duration": 1, "camera": "cam", "background": "environment"}
