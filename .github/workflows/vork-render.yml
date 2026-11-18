@@ -34,6 +34,10 @@ on:
         description: Commit the render back to this branch so it is viewable in the repo
         type: boolean
         default: true
+      sweep_exposures:
+        description: Instead of one frame, render an exposure sweep contact sheet
+        type: boolean
+        default: false
   push:
     # Only content changes render. Editing this workflow or the setup action must not
     # burn a CPU render, and shot-01/render*.png is excluded so a CI commit cannot
@@ -102,7 +106,15 @@ jobs:
           vork setup --skip-warmup 2>&1 | tee setup.log
           echo "--- vork setup exit: ${PIPESTATUS[0]} ---"
 
+      - name: Exposure sweep
+        if: inputs.sweep_exposures
+        run: |
+          set -o pipefail
+          python3 -m pip install --quiet numpy pillow
+          python3 scripts/sweep_exposure.py -0.9 -0.6 -0.3 0.0 2>&1 | tee sweep.log
+
       - name: Smoke frame (same profile, so the kernel compile is shared)
+        if: ${{ !inputs.sweep_exposures }}
         run: |
           set -o pipefail
           GPU_ARG="--gpu cpu"
@@ -113,6 +125,7 @@ jobs:
           echo "smoke wall $(( $(date +%s) - start ))s" | tee -a smoke.log
 
       - name: Render at ${{ env.RESOLUTION }} with ${{ env.PROFILE }}
+        if: ${{ !inputs.sweep_exposures }}
         run: |
           set -o pipefail
           GPU_ARG="--gpu cpu"
@@ -127,6 +140,7 @@ jobs:
 
       # ---- measurement
       - name: Compare against the plate
+        if: ${{ !inputs.sweep_exposures }}
         run: |
           set -o pipefail
           python3 -m pip install --quiet numpy pillow
@@ -167,6 +181,7 @@ jobs:
             shot-01/render.png
             shot-01/render_preview.png
             shot-01/compare_ci.png
+            shot-01/exposure_sweep.png
             shot-01/*.meta.json
             compare.txt
             render.log
@@ -180,7 +195,8 @@ jobs:
         run: |
           git config user.name  "vork-render[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f shot-01/render.png shot-01/render_preview.png shot-01/compare_ci.png compare.txt
+          git add -f shot-01/exposure_sweep.png 2>/dev/null || true
+          git add -f shot-01/render.png shot-01/render_preview.png shot-01/compare_ci.png compare.txt 2>/dev/null || true
           git add -f shot-01/*.meta.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "render is byte-identical to the committed one; nothing to commit"
