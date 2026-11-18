@@ -1,8 +1,8 @@
 {
   "animation_range": null,
-  "asset_bytes": 357596,
+  "asset_bytes": 357600,
   "bake": null,
-  "bytes": 357596,
+  "bytes": 357600,
   "counts": {
     "animations": 0,
     "buffer_bytes": 335736,
@@ -253,7 +253,7 @@
   },
   "source": "shot-01/scene.export.json",
   "source_clock": null,
-  "source_hash": "fc4444b2c342b4cd8484d6d0982f17ab77cf0b2f28877daa275136db3ebbfedb",
+  "source_hash": "531f273a005ae94b3265b5f5abc21c056092303be8ad878e46beb99a06511393",
   "status": "complete",
   "target": {
     "extensions_required": [

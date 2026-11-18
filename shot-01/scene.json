@@ -7,7 +7,7 @@
   "view": {
    "program": "std/agx",
    "inputs": {
-    "exposure": -0.15,
+    "exposure": -1.55,
     "look": "none"
    }
   }
@@ -37,7 +37,7 @@
      0.0075,
      0.0105
     ],
-    "specular_roughness": 0.22,
+    "specular_roughness": 0.15,
     "base_metalness": 0.0,
     "specular_weight": 1.0
    }
@@ -97,7 +97,7 @@
      0.0
     ],
     "specular_roughness": 0.4,
-    "emission_luminance": 26000.0,
+    "emission_luminance": 9000.0,
     "emission_color": [
      1.0,
      0.52,
@@ -113,7 +113,7 @@
      0.0,
      0.0
     ],
-    "emission_luminance": 900.0,
+    "emission_luminance": 70.0,
     "emission_color": [
      0.62,
      0.68,
@@ -129,7 +129,7 @@
      0.0,
      0.0
     ],
-    "emission_luminance": 11000.0,
+    "emission_luminance": 2400.0,
     "emission_color": [
      1.0,
      0.965,
@@ -141,9 +141,9 @@
    "program": "mist",
    "inputs": {
     "scattering": [
-     0.0125,
-     0.014,
-     0.016
+     0.0045,
+     0.005,
+     0.0058
     ],
     "absorption": [
      0.0,
@@ -171,11 +171,11 @@
    "material": {
     "program": "std/sky",
     "inputs": {
-     "sun_elevation": -0.062,
+     "sun_elevation": -0.145,
      "sun_rotation": 5.8,
      "altitude": 60.0,
      "air_density": 1.0,
-     "aerosol_density": 1.7,
+     "aerosol_density": 0.45,
      "ozone_density": 1.0
     }
    }

@@ -39,6 +39,18 @@ Every run also:
 If the CI render diverges from your local branch, `git pull --rebase` — CI commits
 the render with `[skip ci]`.
 
+First run on a hosted runner, for budgeting:
+
+| step | time |
+|---|---|
+| install Mesa + vork (380 MB from npm) | 12–18 min |
+| smoke frame 400×168 (kernel compile) | 2m30s |
+| full render 1600×672 `std/final` | **1m24s** |
+| compare + publish | 9s |
+
+Rendering is cheap; installing is not, so the npm and shader caches carry across
+runs. `std/path` will be much slower than `std/final`.
+
 ```sh
 npm install -g @voyager-so/vork          # the curl installer's CDN may be unreachable
 python3 scripts/build_scene.py           # regenerate shot-01/scene.json from the measurements

@@ -2,13 +2,14 @@ name: vork render
 
 # Renders shot-01 on a machine with no GPU.
 #
-# GitHub-hosted runners have no GPU at all, and the hosted GPU runners (T4) have
-# no ray-tracing cores, which vork requires for hardware rendering. So the default
-# job installs Mesa's lavapipe software Vulkan driver and renders with vork's
-# supported CPU path (`--gpu cpu`). It is slow but it needs no GPU.
+# GitHub-hosted runners have no GPU at all, and the hosted GPU runners (T4) have no
+# ray-tracing cores, which vork requires for hardware rendering. So this installs
+# Mesa's lavapipe software Vulkan driver and renders with vork's supported CPU path
+# (`--gpu cpu`). Measured on ubuntu-24.04: 1m24s for 1600x672 std/final; installing
+# vork dominates the job.
 #
-# Have an RTX-class box? Register it as a self-hosted runner with the labels
-# `self-hosted,gpu` and pick "self-hosted-gpu" when dispatching.
+# Have an RTX-class box? Register it as a self-hosted runner labelled
+# `self-hosted,gpu` and dispatch with runner: self-hosted-gpu.
 
 on:
   workflow_dispatch:
@@ -34,9 +35,9 @@ on:
         type: boolean
         default: true
   push:
-    # Only content changes render. Editing this workflow or the setup action must
-    # not burn a 20-minute CPU render, and shot-01/render*.png is excluded so a CI
-    # commit cannot re-trigger itself.
+    # Only content changes render. Editing this workflow or the setup action must not
+    # burn a CPU render, and shot-01/render*.png is excluded so a CI commit cannot
+    # re-trigger itself.
     paths:
       - shot-01/scene.json
       - scripts/build_scene.py
@@ -57,16 +58,18 @@ env:
   VORK_CACHE_DIR: ${{ github.workspace }}/.vork-cache
 
 jobs:
-  validate:
-    name: validate scene
-    runs-on: ubuntu-24.04
+  render:
+    name: render ${{ inputs.profile || 'std/final' }} (${{ inputs.runner || 'github-cpu' }})
+    runs-on: ${{ fromJSON(inputs.runner == 'self-hosted-gpu' && '["self-hosted","gpu"]' || '"ubuntu-24.04"') }}
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
 
       - uses: ./.github/actions/setup-vork
         with:
-          mode: cpu
+          mode: ${{ inputs.runner == 'self-hosted-gpu' && 'hardware' || 'cpu' }}
 
+      # ---- validation (CPU only, no device needed)
       - name: The committed scene must match its generator
         run: |
           python3 scripts/build_scene.py
@@ -77,36 +80,13 @@ jobs:
           fi
           echo "scene.json is reproducible from scripts/build_scene.py"
 
-      - name: vork check (CPU-only validation)
+      - name: vork check
         run: vork check shot-01/scene.json
 
       - name: vork export (geometry, no GPU needed)
         run: python3 scripts/export_geometry.py
 
-      - name: Summarise
-        if: always()
-        run: |
-          {
-            echo "### Scene validation"
-            echo '```'
-            echo "scene:  $(git rev-parse --short HEAD)  shot-01/scene.json"
-            echo "vork:   $(vork --version)"
-            echo "nodes:  $(python3 -c 'import json;print(len(json.load(open("shot-01/scene.json"))["nodes"]))')"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-  render:
-    name: render ${{ inputs.profile || 'std/final' }} (${{ inputs.runner || 'github-cpu' }})
-    needs: validate
-    runs-on: ${{ fromJSON(inputs.runner == 'self-hosted-gpu' && '["self-hosted","gpu"]' || '"ubuntu-24.04"') }}
-    timeout-minutes: 240
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: ./.github/actions/setup-vork
-        with:
-          mode: ${{ inputs.runner == 'self-hosted-gpu' && 'hardware' || 'cpu' }}
-
+      # ---- rendering
       - name: Cache vork's compiled shader cache
         uses: actions/cache@v4
         with:
@@ -115,14 +95,14 @@ jobs:
           restore-keys: |
             vork-cache-${{ runner.os }}-${{ env.PROFILE }}-
 
-      - name: GPU / device report
+      - name: Device report
         continue-on-error: true
         run: |
           set -o pipefail
           vork setup --skip-warmup 2>&1 | tee setup.log
           echo "--- vork setup exit: ${PIPESTATUS[0]} ---"
 
-      - name: Smoke frame (low resolution, same profile so the kernel compile is shared)
+      - name: Smoke frame (same profile, so the kernel compile is shared)
         run: |
           set -o pipefail
           GPU_ARG="--gpu cpu"
@@ -145,6 +125,7 @@ jobs:
             --diagnostics 2>&1 | tee render.log
           echo "render wall $(( $(date +%s) - start ))s" | tee -a render.log
 
+      # ---- measurement
       - name: Compare against the plate
         run: |
           set -o pipefail
@@ -159,7 +140,7 @@ jobs:
             python3 scripts/silhouette.py shot-01/reference.png shot-01/render.png
           } | tee compare.txt
 
-      - name: Publish comparison to the job summary
+      - name: Publish to the job summary
         if: always()
         run: |
           {
@@ -171,9 +152,9 @@ jobs:
             cat compare.txt 2>/dev/null || echo "(no comparison produced)"
             echo '```'
             echo ""
-            echo "Timings:"
+            echo "vork exposure summary / timings:"
             echo '```'
-            grep -hE 'wall|Render:' render.log smoke.log 2>/dev/null | tail -20 || true
+            grep -hE 'wall|Render:|clipped|near-black|mean' render.log smoke.log 2>/dev/null | tail -20 || true
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -200,6 +181,7 @@ jobs:
           git config user.name  "vork-render[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f shot-01/render.png shot-01/render_preview.png shot-01/compare_ci.png compare.txt
+          git add -f shot-01/*.meta.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "render is byte-identical to the committed one; nothing to commit"
           else
@@ -213,14 +195,14 @@ jobs:
           {
             echo "### Render failed"
             echo ""
-            echo "Most likely cause: the software Vulkan device (lavapipe) was rejected."
-            echo "vork needs rayon queries and storage buffer arrays."
+            echo "Most likely cause: the software Vulkan device (lavapipe) was rejected;"
+            echo "vork needs ray queries and storage buffer arrays."
             echo ""
             echo '```'
             tail -30 render.log smoke.log setup.log 2>/dev/null || true
             echo '```'
             echo ""
             echo "Options: register a self-hosted RTX-class runner (labels \`self-hosted,gpu\`),"
-            echo "re-dispatch with \`self-hosted-gpu\`, or render locally on a machine with an"
+            echo "re-dispatch with \`self-hosted-gpu\`, or render on a machine with an"
             echo "RT-capable Vulkan driver."
           } >> "$GITHUB_STEP_SUMMARY"

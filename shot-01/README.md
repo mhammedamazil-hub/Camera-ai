@@ -110,6 +110,26 @@ water right          0.198         0.297            +0.099   ← still too brigh
 moon peak            0.909         0.967
 ```
 
+## First real vork render (CI, iteration 07)
+
+The workflow below produced the first frame from **vork's own renderer**
+(`std/final`, 1600×672, lavapipe CPU, 1m24s). Geometry survived the handover:
+the silhouette still matched at **shape IoU 0.942** with edges within ±0.005 —
+the CPU previz was telling the truth about framing.
+
+Lighting did **not** survive, and the previz could not have caught it:
+
+| what the render showed | measurement | cause | fix |
+|---|---|---|---|
+| whole frame pink/orange, not blue hour | sky +0.218 … +0.282 | `sun_elevation -0.062` rad with `aerosol_density 1.7` still renders the afterglow of a *sunset* | sun to `-0.145` rad, aerosol `1.7 → 0.45` |
+| everything ~1.8× too bright | mean luma 0.454 vs 0.261 | exposure was tuned in the previz's tone curve, not AgX | `exposure -0.15 → -1.55` |
+| white haze across the foreground | water +0.387, stone lower +0.320 | height fog scattering ~4× too high near the eye | `scattering 0.0125 → 0.0045` |
+| moon a solid white blob | peak clipped at 1.000 | crescent *and* earthshine both clipped, hiding the crescent | moon `11000 → 2400`, earthshine `900 → 70` cd/m² |
+| lantern bloom spilling over the stone | — | emissive core `26000` cd/m² | `→ 9000` |
+
+That is the loop finally closing on the renderer that matters: **compare the real
+frame, name the largest defect, change the parameter responsible, re-render.**
+
 ## What is verified, and what is not
 
 **Verified here:** `vork check` passes; geometry exports cleanly (16 meshes); the
