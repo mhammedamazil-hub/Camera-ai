@@ -1,0 +1,62 @@
+name: Setup vork
+description: >
+  Install vork 0.6.0 and a Vulkan device it can use. On GitHub-hosted runners
+  there is no GPU, so we install Mesa's lavapipe software Vulkan driver and let
+  vork render with --gpu cpu (supported on Linux, slower than hardware).
+
+inputs:
+  mode:
+    description: "'cpu' for lavapipe software Vulkan, 'hardware' for a self-hosted GPU runner"
+    required: false
+    default: cpu
+  version:
+    description: vork npm package version to install
+    required: false
+    default: "0.6.0"
+
+runs:
+  using: composite
+  steps:
+    - name: Install Vulkan loader + lavapipe (software) or verify hardware driver
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ "${{ inputs.mode }}" = "cpu" ]; then
+          sudo apt-get update -qqo Acquire::Retries=3
+          # mesa-vulkan-drivers provides lavapipe (llvmpipe Vulkan, ray-query capable on 24.04)
+          sudo apt-get install -y --no-install-recommends \
+            libvulkan1 mesa-vulkan-drivers vulkan-tools libgomp1 ffmpeg ca-certificates
+        else
+          command -v nvidia-smi >/dev/null && nvidia-smi || true
+          sudo apt-get install -y --no-install-recommends libgomp1 ffmpeg vulkan-tools || true
+        fi
+
+    - name: Install vork
+      shell: bash
+      run: |
+        set -euo pipefail
+        # The documented curl installer pulls from release-assets.githubusercontent.com.
+        # The npm package ships the same native runtime for this platform.
+        npm install -g "@voyager-so/vork@${{ inputs.version }}"
+        vork --version
+
+    - name: Report the Vulkan device vork will use
+      shell: bash
+      run: |
+        set -euo pipefail
+        echo "--- ICD files ---"
+        ls -1 /usr/share/vulkan/icd.d/ /etc/vulkan/icd.d/ 2>/dev/null || echo "(none)"
+        echo "--- vulkaninfo --summary ---"
+        vulkaninfo --summary 2>&1 | sed -n '1,60p' || echo "vulkaninfo failed"
+
+    - name: Force lavapipe and CPU rendering (software mode only)
+      if: inputs.mode == 'cpu'
+      shell: bash
+      run: |
+        set -euo pipefail
+        icd=$(ls /usr/share/vulkan/icd.d/lvp_icd.*.json 2>/dev/null | head -1 || true)
+        if [ -n "${icd}" ]; then
+          echo "VK_ICD_FILENAMES=${icd}" >> "$GITHUB_ENV"
+          echo "pinned ICD: ${icd}"
+        fi
+        echo "VORK_GPU=cpu" >> "$GITHUB_ENV"

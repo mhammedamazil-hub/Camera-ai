@@ -1,0 +1,226 @@
+name: vork render
+
+# Renders shot-01 on a machine with no GPU.
+#
+# GitHub-hosted runners have no GPU at all, and the hosted GPU runners (T4) have
+# no ray-tracing cores, which vork requires for hardware rendering. So the default
+# job installs Mesa's lavapipe software Vulkan driver and renders with vork's
+# supported CPU path (`--gpu cpu`). It is slow but it needs no GPU.
+#
+# Have an RTX-class box? Register it as a self-hosted runner with the labels
+# `self-hosted,gpu` and pick "self-hosted-gpu" when dispatching.
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Render profile
+        type: choice
+        options: [std/draft, std/final, std/path]
+        default: std/final
+      resolution:
+        description: Output resolution (WxH)
+        default: "1600x672"
+      samples:
+        description: Override sample budget (blank = profile default)
+        default: ""
+      runner:
+        description: Where to render
+        type: choice
+        options: [github-cpu, self-hosted-gpu]
+        default: github-cpu
+      commit_render:
+        description: Commit the render back to this branch so it is viewable in the repo
+        type: boolean
+        default: true
+  push:
+    # deliberately not shot-01/render*.png, so a CI commit cannot re-trigger itself
+    paths:
+      - shot-01/scene.json
+      - scripts/**
+      - .github/workflows/vork-render.yml
+      - .github/actions/setup-vork/action.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vork-render-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PROFILE: ${{ inputs.profile || 'std/final' }}
+  RESOLUTION: ${{ inputs.resolution || '1600x672' }}
+  SAMPLES: ${{ inputs.samples || '' }}
+  RUNNER_KIND: ${{ inputs.runner || 'github-cpu' }}
+  SHOT: shot-01
+  VORK_CACHE_DIR: ${{ github.workspace }}/.vork-cache
+
+jobs:
+  validate:
+    name: validate scene
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-vork
+        with:
+          mode: cpu
+
+      - name: The committed scene must match its generator
+        run: |
+          python3 scripts/build_scene.py
+          if ! git diff --quiet -- shot-01/scene.json; then
+            echo "::error::shot-01/scene.json is out of date; run scripts/build_scene.py and commit it"
+            git diff --stat -- shot-01/scene.json
+            exit 1
+          fi
+          echo "scene.json is reproducible from scripts/build_scene.py"
+
+      - name: vork check (CPU-only validation)
+        run: vork check shot-01/scene.json
+
+      - name: vork export (geometry, no GPU needed)
+        run: python3 scripts/export_geometry.py
+
+      - name: Summarise
+        if: always()
+        run: |
+          {
+            echo "### Scene validation"
+            echo '```'
+            echo "scene:  $(git rev-parse --short HEAD)  shot-01/scene.json"
+            echo "vork:   $(vork --version)"
+            echo "nodes:  $(python3 -c 'import json;print(len(json.load(open("shot-01/scene.json"))["nodes"]))')"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  render:
+    name: render ${{ inputs.profile || 'std/final' }} (${{ inputs.runner || 'github-cpu' }})
+    needs: validate
+    runs-on: ${{ fromJSON(inputs.runner == 'self-hosted-gpu' && '["self-hosted","gpu"]' || '"ubuntu-24.04"') }}
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-vork
+        with:
+          mode: ${{ inputs.runner == 'self-hosted-gpu' && 'hardware' || 'cpu' }}
+
+      - name: Cache vork's compiled shader cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.VORK_CACHE_DIR }}
+          key: vork-cache-${{ runner.os }}-${{ env.PROFILE }}-${{ hashFiles('shot-01/scene.json') }}
+          restore-keys: |
+            vork-cache-${{ runner.os }}-${{ env.PROFILE }}-
+
+      - name: GPU / device report
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          vork setup --skip-warmup 2>&1 | tee setup.log
+          echo "--- vork setup exit: ${PIPESTATUS[0]} ---"
+
+      - name: Smoke frame (low resolution, same profile so the kernel compile is shared)
+        run: |
+          set -o pipefail
+          GPU_ARG="--gpu cpu"
+          if [ "$RUNNER_KIND" = "self-hosted-gpu" ]; then GPU_ARG=""; fi
+          start=$(date +%s)
+          vork render "$SHOT/scene.json" --out "$SHOT/render_preview.png" \
+            --profile "$PROFILE" $GPU_ARG --set resolution=400x168 2>&1 | tee smoke.log
+          echo "smoke wall $(( $(date +%s) - start ))s" | tee -a smoke.log
+
+      - name: Render at ${{ env.RESOLUTION }} with ${{ env.PROFILE }}
+        run: |
+          set -o pipefail
+          GPU_ARG="--gpu cpu"
+          if [ "$RUNNER_KIND" = "self-hosted-gpu" ]; then GPU_ARG=""; fi
+          SET_SAMPLES=""
+          if [ -n "$SAMPLES" ]; then SET_SAMPLES="--set samples=$SAMPLES"; fi
+          start=$(date +%s)
+          vork render "$SHOT/scene.json" --out "$SHOT/render.png" \
+            --profile "$PROFILE" $GPU_ARG --set "resolution=$RESOLUTION" $SET_SAMPLES \
+            --diagnostics 2>&1 | tee render.log
+          echo "render wall $(( $(date +%s) - start ))s" | tee -a render.log
+
+      - name: Compare against the plate
+        run: |
+          set -o pipefail
+          python3 -m pip install --quiet numpy pillow
+          if [ ! -f shot-01/render.png ]; then
+            echo "no render.png produced; skipping comparison" | tee compare.txt
+            exit 0
+          fi
+          {
+            python3 scripts/compare.py shot-01/reference.png shot-01/render.png shot-01/compare_ci.png
+            echo
+            python3 scripts/silhouette.py shot-01/reference.png shot-01/render.png
+          } | tee compare.txt
+
+      - name: Publish comparison to the job summary
+        if: always()
+        run: |
+          {
+            echo "### vork render vs plate"
+            echo ""
+            echo "profile \`$PROFILE\`, $RESOLUTION, runner \`$RUNNER_KIND\`"
+            echo ""
+            echo '```'
+            cat compare.txt 2>/dev/null || echo "(no comparison produced)"
+            echo '```'
+            echo ""
+            echo "Timings:"
+            echo '```'
+            grep -hE 'wall|Render:' render.log smoke.log 2>/dev/null | tail -20 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vork-render-${{ github.run_number }}
+          path: |
+            shot-01/render.png
+            shot-01/render_preview.png
+            shot-01/compare_ci.png
+            shot-01/*.meta.json
+            compare.txt
+            render.log
+            smoke.log
+            setup.log
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Commit the render back to the branch
+        if: inputs.commit_render && github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name  "vork-render[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f shot-01/render.png shot-01/render_preview.png shot-01/compare_ci.png
+          if git diff --cached --quiet; then
+            echo "render is byte-identical to the committed one; nothing to commit"
+          else
+            git commit -m "CI render: $PROFILE $RESOLUTION ($RUNNER_KIND) [skip ci]"
+            git push
+          fi
+
+      - name: What to do if this failed
+        if: failure()
+        run: |
+          {
+            echo "### Render failed"
+            echo ""
+            echo "Most likely cause: the software Vulkan device (lavapipe) was rejected."
+            echo "vork needs rayon queries and storage buffer arrays."
+            echo ""
+            echo '```'
+            tail -30 render.log smoke.log setup.log 2>/dev/null || true
+            echo '```'
+            echo ""
+            echo "Options: register a self-hosted RTX-class runner (labels \`self-hosted,gpu\`),"
+            echo "re-dispatch with \`self-hosted-gpu\`, or render locally on a machine with an"
+            echo "RT-capable Vulkan driver."
+          } >> "$GITHUB_STEP_SUMMARY"

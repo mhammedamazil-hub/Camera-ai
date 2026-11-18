@@ -126,7 +126,22 @@ weathered basalt (no albedo/normal texture); the mist is a smooth layer, not the
 plate's streaky banks; the water has no pebbles or ripple detail and its right
 side is ~0.1 luma too bright; the crescent is thinner than the plate's.
 
-## Finishing it on a GPU machine
+## Rendering it in CI (no GPU)
+
+`.github/workflows/vork-render.yml` does the whole workload on GitHub Actions:
+validate → export → smoke frame → render → compare → artifact/commit.
+
+Dispatch it from **Actions → vork render → Run workflow**. Defaults are
+`std/final` at `1600x672` on a hosted runner using vork's `--gpu cpu` software
+Vulkan path (Mesa lavapipe), because hosted runners have no GPU and the hosted T4
+GPU runners have no ray-tracing cores. A `self-hosted-gpu` option takes the
+hardware path if you ever register an RTX-class runner.
+
+Each run posts the comparison table into the job summary, so the same
+compare-and-fix loop that produced `iteration_log.png` can be run against real
+vork output without touching a local machine.
+
+## Finishing it on a GPU machine (alternative)
 
 ```sh
 sudo apt-get install -y ca-certificates curl tar libvulkan1 libgomp1 ffmpeg
