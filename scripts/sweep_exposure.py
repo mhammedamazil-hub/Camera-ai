@@ -8,6 +8,7 @@ variant is a comma-separated set of overrides:
     sun= std/sky sun_elevation (radians)
     aer= std/sky aerosol_density
     E=   environment light energy multiplier
+    r=   std/sky sun_rotation (radians)
 
   SWEEP_VARIANTS="e=-0.5,sun=-0.10,aer=0.8,E=1  e=-0.5,sun=-0.10,aer=0.8,E=4" \
     VORK_GPU=cpu python3 scripts/sweep_exposure.py
@@ -43,6 +44,7 @@ for i, spec in enumerate(VARIANTS):
         if node.get('name') == 'sky':
             node['material']['inputs']['sun_elevation'] = float(opts.get('sun', -0.10))
             node['material']['inputs']['aerosol_density'] = float(opts.get('aer', 0.8))
+            node['material']['inputs']['sun_rotation'] = float(opts.get('r', 5.80))
             node['energy'] = float(opts.get('E', 1.0))
     s['render']['resolution'] = list(TILE)
     path, out = f'out/sweep/v{i}.json', f'out/sweep/v{i}.png'

@@ -74,11 +74,11 @@ Y_UNIT = 2.0 / 6.0   # mm of image per metre at 60 m, kept for the notes
 
 nodes = []
 # --- environment: twilight sky + world fog on the single environment light
-nodes.append({"type": "light", "name": "sky", "shape": "environment", "energy": 1.0,
+nodes.append({"type": "light", "name": "sky", "shape": "environment", "energy": 2.0,
               "color": [1, 1, 1], "medium": "mist",
               "material": {"program": "std/sky", "inputs": {
-                  "sun_elevation": -0.145, "sun_rotation": 5.80, "altitude": 60.0,
-                  "air_density": 1.0, "aerosol_density": 0.45, "ozone_density": 1.0}}})
+                  "sun_elevation": -0.100, "sun_rotation": 5.80, "altitude": 60.0,
+                  "air_density": 1.0, "aerosol_density": 0.80, "ozone_density": 1.0}}})
 # --- weak cool key from the left: shapes the slab, rims its left edge
 nodes.append({"type": "light", "name": "moonlight", "shape": "sun", "energy": 0.045,
               "color": [0.60, 0.75, 1.0], "angle": 0.009,
@@ -144,7 +144,7 @@ def arc(cx, r, t0, t1, n=28):
              round(r * math.sin(t0 + (t1 - t0) * i / (n - 1)), 4)] for i in range(n)]
 
 MOON_R = 2.4
-INNER = 1.15 * MOON_R                       # bigger radius -> thinner crescent
+INNER = 1.35 * MOON_R                       # bigger radius -> thinner crescent
 XC = -math.sqrt(INNER * INNER - MOON_R * MOON_R)
 TH0 = math.acos(-XC / INNER)
 CRESCENT = [[-x, y] for x, y in
@@ -166,7 +166,7 @@ scene = {
  "$schema": "https://raw.githubusercontent.com/voyager-so/vork/v0.6.0/packages/ts/scene.schema.json",
  "version": 2,
  "composition": {"space": "3d", "color_space": "Linear Rec.709",
-                 "view": {"program": "std/agx", "inputs": {"exposure": -1.55, "look": "none"}}},
+                 "view": {"program": "std/agx", "inputs": {"exposure": -0.50, "look": "none"}}},
  "programs": {"mist": {"source": MIST}},
  "materials": {
    "cam": {"program": "std/camera", "inputs": {
