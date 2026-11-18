@@ -183,6 +183,42 @@ Also fixed on the way: vork 0.6.0 rendered the moon's two-arc SVG `d` path as a
 full disc, so the crescent is now sampled into a 56-point polygon (verified from
 vork's own exported triangles: lit limb left, 72 vs 8 px).
 
+## Iteration 12 — current state
+
+Committed render: `shot-01/render.png` (1600x672, `std/final`, 32 samples,
+lavapipe on a GitHub-hosted CPU runner). Side-by-side: `compare_ci.png`,
+per-landmark numbers: `compare.txt`.
+
+| measure | plate | render | delta |
+|---|---|---|---|
+| mean luma | 0.261 | 0.261 | 0.000 |
+| horizon y | 0.734 | 0.720 | −0.013 |
+| stone x0 / x1 | 0.413 / 0.554 | 0.391 / 0.542 | −0.023 / −0.012 |
+| stone y0 | 0.106 | 0.105 | −0.001 |
+| sky top-right | 0.181 | 0.185 | +0.005 |
+| sky near-horizon | 0.264 | 0.329 | +0.065 |
+| stone mid | 0.135 | 0.110 | −0.025 |
+| water mid | 0.327 | 0.318 | −0.009 |
+| water right | 0.198 | 0.303 | +0.105 |
+| **shape IoU** | — | **0.9494** | worst-case landmark |
+
+Known gaps, in the order they should be attacked:
+
+1. **Sky hue.** The render is orange/purple where the plate is teal. This is a
+   sky-model limit, not a dial: every `std/sky` setting bright enough to hold the
+   exposure keeps a warm afterglow. Fix: a custom sky `program` (the mechanism the
+   `mist` medium already uses) or sun ≈ −0.20 rad with `energy ~10`.
+2. **Moon reads as a disc.** The crescent outline is right (verified from vork's
+   own export), but 2400 nit emission plus bloom fills it in. Drop to ~400 and
+   re-measure `moon peak lum` (currently clipped at 1.000 vs the plate's 0.909).
+3. **No stone reflection.** The water is near-mirror at roughness 0.06 yet shows
+   only the lantern streak; the bright near-horizon haze washes it out. Lower the
+   fog's brightness near the surface before adding ripples.
+4. **Stone surface is too smooth** relative to the plate's fractured basalt —
+   needs more displacement octaves in `build_scene.py`, not more lighting work.
+5. **Mist banks.** The plate's layer crosses the whole frame in banks with a hard
+   top edge; the render's is a soft gradient. Vary `base_height` with noise.
+
 ## What is verified, and what is not
 
 **Verified here:** `vork check` passes; geometry exports cleanly (16 meshes); the
