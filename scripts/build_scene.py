@@ -74,11 +74,11 @@ Y_UNIT = 2.0 / 6.0   # mm of image per metre at 60 m, kept for the notes
 
 nodes = []
 # --- environment: twilight sky + world fog on the single environment light
-nodes.append({"type": "light", "name": "sky", "shape": "environment", "energy": 2.8,
+nodes.append({"type": "light", "name": "sky", "shape": "environment", "energy": 5.0,
               "color": [1, 1, 1], "medium": "mist",
               "material": {"program": "std/sky", "inputs": {
-                  "sun_elevation": -0.155, "sun_rotation": 6.40, "altitude": 60.0,
-                  "air_density": 1.0, "aerosol_density": 0.55, "ozone_density": 1.0}}})
+                  "sun_elevation": -0.125, "sun_rotation": 6.40, "altitude": 60.0,
+                  "air_density": 1.0, "aerosol_density": 0.35, "ozone_density": 1.0}}})
 # --- weak cool key from the left: shapes the slab, rims its left edge
 nodes.append({"type": "light", "name": "moonlight", "shape": "sun", "energy": 0.55,
               "color": [0.55, 0.72, 1.0], "angle": 0.009,

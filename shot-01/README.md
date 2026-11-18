@@ -159,8 +159,25 @@ documented convention; fixed `e=-0.50, sun=-0.10, aer=0.80, E=2.0`):
 | **6.40** | **0.271** | **anti-solar blue above, afterglow band on the left** |
 | 7.00 | 0.206 | glow swinging out of frame, dimming |
 
-Best match is `exposure -0.50`, `energy 2.0`, `sun_elevation -0.10`,
-`sun_rotation 6.40` — mean 0.271 against the plate's 0.261.
+**Sweep 4 — aerosol vs energy** (`sun_rotation 6.40`, `e=-0.50`):
+
+| variant | mean luma | note |
+|---|---|---|
+| sun −0.100, aer 0.80, E 2.0 | 0.279 | baseline; warm band |
+| sun −0.100, aer 0.25, E 2.0 | 0.284 | less aerosol barely cools it |
+| sun −0.100, aer 0.25, E 3.2 | 0.348 | over-bright |
+| **sun −0.125, aer 0.35, E 5.0** | **0.261** | **exact tone match, coolest upper sky** |
+
+Adopted the last row. Two lessons worth keeping:
+
+- **`std/sky` keeps a warm afterglow band at any sun elevation that still looks
+  bright enough.** Dropping the sun from −0.10 to −0.155 rad costs ~5x the sky
+  radiance (the environment energy has to go from 2 to ~5 to compensate), and even
+  then the horizon stays orange. The plate's teal is a different sky: it needs
+  either a sun near −0.20 rad with `energy ~10`, or a custom sky program (the same
+  `program` mechanism already used for the `mist` medium).
+- **The tone is now matched exactly** (mean 0.261 vs 0.261), so from here exposure
+  is a fixed reference and only *hue* is left to chase.
 
 Also fixed on the way: vork 0.6.0 rendered the moon's two-arc SVG `d` path as a
 full disc, so the crescent is now sampled into a 56-point polygon (verified from

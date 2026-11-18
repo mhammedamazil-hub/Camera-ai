@@ -161,7 +161,7 @@
    "type": "light",
    "name": "sky",
    "shape": "environment",
-   "energy": 2.8,
+   "energy": 5.0,
    "color": [
     1,
     1,
@@ -171,11 +171,11 @@
    "material": {
     "program": "std/sky",
     "inputs": {
-     "sun_elevation": -0.155,
+     "sun_elevation": -0.125,
      "sun_rotation": 6.4,
      "altitude": 60.0,
      "air_density": 1.0,
-     "aerosol_density": 0.55,
+     "aerosol_density": 0.35,
      "ozone_density": 1.0
     }
    }
