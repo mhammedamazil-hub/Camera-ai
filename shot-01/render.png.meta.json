@@ -1,18 +1,18 @@
 {
   "denoiser": "cpu",
   "exposure": {
-    "clipped": 0.0015606398809523809,
+    "clipped": 0.0006082589285714286,
     "coverage": 1.0,
     "frames": 1,
-    "mean": 0.2713761958861041,
-    "near_black": 0.04660900297619048,
+    "mean": 0.12858123821229206,
+    "near_black": 0.020167410714285714,
     "worst_clipped": {
       "frame": 0,
-      "share": 0.0015606398809523809
+      "share": 0.0006082589285714286
     },
     "worst_near_black": {
       "frame": 0,
-      "share": 0.04660900297619048
+      "share": 0.020167410714285714
     }
   },
   "fps": 24,
@@ -24,10 +24,10 @@
       "dropped_light_samples": 0,
       "dropped_path_samples": 0,
       "exposure": {
-        "clipped": 0.0015606398809523809,
+        "clipped": 0.0006082589285714286,
         "coverage": 1.0,
-        "mean": 0.2713761958861041,
-        "near_black": 0.04660900297619048
+        "mean": 0.12858123821229206,
+        "near_black": 0.020167410714285714
       },
       "index": 0,
       "invalid_pixel_count": 0,
