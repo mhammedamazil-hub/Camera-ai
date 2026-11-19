@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f4f2ec" />
+  <title>Signal / How mobile phones work</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="site-shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="Signal home"><span class="brand-mark"><i></i><i></i><i></i></span>signal<span class="brand-dot">.</span></a>
+      <div class="top-center"><span class="tiny-dot"></span> AN ANIMATED EXPLAINER <span class="top-divider"></span> VOL. 01</div>
+      <a class="about-link" href="#chapters">Explore the story <span>↗</span></a>
+    </header>
+
+    <main id="top">
+      <section class="intro">
+        <div><div class="eyebrow"><span class="asterisk">✳</span> THE EVERYDAY, EXPLAINED</div><h1>Little device. <em>Big connection.</em></h1></div>
+        <p>A closer look at the invisible technology<br class="desktop-only" /> that keeps us connected.</p>
+      </section>
+
+      <section class="film" aria-label="How mobile phones work animation">
+        <div class="film-grain"></div>
+        <canvas id="stage" aria-label="Animated 3D illustration of mobile phone communication"></canvas>
+        <div class="film-top"><span><span class="live-dot"></span> THE SIGNAL SERIES</span><span>01 / HOW IT WORKS</span></div>
+        <div class="film-copy" aria-live="polite">
+          <div class="chapter-kicker"><span id="chapter-number">01</span><span class="kicker-line"></span><span id="chapter-tag">THE BEGINNING</span></div>
+          <h2 id="chapter-title">It starts with<br><em>your voice.</em></h2>
+          <p id="chapter-description">Your phone transforms sound into digital information, ready to travel.</p>
+          <div class="film-note"><span class="note-icon">✳</span> <span>THE MAGIC IS IN THE MOVEMENT</span></div>
+        </div>
+        <div class="object-label"><span class="label-cross">✳</span><span id="object-label">YOUR PHONE<br><small>THE STORY STARTS HERE</small></span></div>
+        <div class="film-bottom"><span>AN INVISIBLE JOURNEY, MADE VISIBLE.</span><span>SCROLL TO EXPLORE <span class="down-arrow">↓</span></span></div>
+      </section>
+
+      <section class="player" aria-label="Animation controls">
+        <button class="play-button" id="play-button" aria-label="Pause animation"><span id="play-icon">Ⅱ</span></button>
+        <div class="time"><span id="current-time">00:00</span><span class="time-slash"> / </span><span>00:24</span></div>
+        <div class="timeline-wrap"><input id="timeline" aria-label="Seek animation" type="range" min="0" max="24" step="0.01" value="0" /><div class="timeline-ticks"><span></span><span></span><span></span></div></div>
+        <span class="player-label">A 24 SECOND JOURNEY</span>
+        <button class="restart" id="restart" aria-label="Restart animation" title="Restart">↺</button>
+      </section>
+
+      <section class="chapters" id="chapters">
+        <div class="chapters-heading"><div><div class="eyebrow"><span class="asterisk">✳</span> FOLLOW THE SIGNAL</div><h3>From hello to <em>hello.</em></h3></div><p>Four little steps. One incredible journey.</p></div>
+        <div class="chapter-grid">
+          <button class="chapter-card active" data-time="0"><span class="card-num">01 <span>↗</span></span><span class="card-title">Make some noise</span><span class="card-desc">Your voice becomes data.</span><span class="card-line"></span></button>
+          <button class="chapter-card" data-time="6"><span class="card-num">02 <span>↗</span></span><span class="card-title">Catch a wave</span><span class="card-desc">Data travels through the air.</span><span class="card-line"></span></button>
+          <button class="chapter-card" data-time="12"><span class="card-num">03 <span>↗</span></span><span class="card-title">Find a tower</span><span class="card-desc">A network makes the connection.</span><span class="card-line"></span></button>
+          <button class="chapter-card" data-time="18"><span class="card-num">04 <span>↗</span></span><span class="card-title">Hello, you.</span><span class="card-desc">The message reaches its destination.</span><span class="card-line"></span></button>
+        </div>
+      </section>
+    </main>
+    <footer><span>signal<span class="brand-dot">.</span></span><span>MADE FOR THE CURIOUS &nbsp; ✳ &nbsp; 2026</span><span>KEEP WONDERING ↗</span></footer>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+film-kit/node_modules/
+film-kit/out/
+film-kit/stills/
+.env
+.venv/
+output/*.wav
+output/test.mp4
+output/stills/
