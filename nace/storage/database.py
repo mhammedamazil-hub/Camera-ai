@@ -68,6 +68,8 @@ class Database:
         self.conn.executescript(SCHEMA)
         self.conn.execute("INSERT OR IGNORE INTO meta(key,value) VALUES('schema_version','1')")
         self.conn.commit()
+        from nace.storage.migrations import migrate
+        migrate(self.conn)
         self._rebuild_fts()
     def _rebuild_fts(self):
         try:

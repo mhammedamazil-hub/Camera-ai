@@ -142,5 +142,12 @@ class SleepEngine:
                                  (json.dumps({"error": str(e)}), time.time(), run_id))
             except Exception: pass
             raise
+    def recover_interrupted(self):
+        """Mark any 'running' sleep runs from a crashed process as failed (recoverable, non-destructive)."""
+        rows = self.db.query("SELECT id FROM sleep_runs WHERE status='running'")
+        for r in rows:
+            self.db.execute("UPDATE sleep_runs SET status='failed', report=?, finished_at=? WHERE id=?",
+                            ('{"error": "interrupted sleep recovered on startup; source context preserved"}', time.time(), r["id"]))
+        return len(rows)
     def history(self, limit=10):
         return self.db.query("SELECT id,reason,status,started_at,finished_at FROM sleep_runs ORDER BY id DESC LIMIT ?",(limit,))

@@ -1,0 +1,22 @@
+name: NACE CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Syntax + quality checks
+        run: |
+          python3 -m compileall -q nace tests scripts
+          python3 -c "import nace.cli.main, nace.core.orchestrator, nace.learning.benchmarks; print('imports ok')"
+      - name: Unit + integration tests (incl. provider stub, tools, loop, benchmarks)
+        run: python3 -m unittest discover -s tests -v
+      - name: Benchmarks (mock/scripted provider only — no real model claimed)
+        run: python3 -c "from nace.learning.benchmarks import run_all; r=run_all(); print(r['passed'],'/',r['total']); assert r['passed']==r['total']"
+      - name: SQLite integrity + sleep recovery smoke
+        run: |
+          python3 -m nace.cli.main --data-dir ./ci-data init >/dev/null
+          python3 -m nace.cli.main --data-dir ./ci-data recover
+          python3 -m nace.cli.main --data-dir ./ci-data status >/dev/null && echo "CLI ok"

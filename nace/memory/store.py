@@ -14,13 +14,14 @@ class MemoryStore:
     def __init__(self, db: Database):
         self.db = db
     def add(self, type="semantic", title="", content="", project="", tags="",
-            confidence=0.5, importance=0.5, source="", status="ACTIVE", supersedes=None) -> int:
+            confidence=0.5, importance=0.5, source="", status="ACTIVE", supersedes=None,
+            provenance="observation", version=1) -> int:
         assert type in TYPES, f"bad type {type}"
         now = time.time()
         h = content_hash(title + "\n" + content)
         cur = self.db.execute(
-            "INSERT INTO memories(type,title,content,project,tags,status,confidence,importance,source,content_hash,embedding,supersedes,created_at,updated_at,last_accessed) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-            (type,title,content,project,tags,status,confidence,importance,source,h,pack(embed(title+" "+content)),supersedes,now,now,now))
+            "INSERT INTO memories(type,title,content,project,tags,status,confidence,importance,source,content_hash,embedding,supersedes,created_at,updated_at,last_accessed,provenance,version) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (type,title,content,project,tags,status,confidence,importance,source,h,pack(embed(title+" "+content)),supersedes,now,now,now,provenance,version))
         mid = cur.lastrowid
         try:
             self.db.execute("INSERT INTO memories_fts(rowid,title,content) VALUES(?,?,?)",(mid,title,content))

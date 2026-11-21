@@ -40,6 +40,16 @@ def main(argv=None):
     sub.add_parser("evaluate"); sub.add_parser("diagnostics")
     r = sub.add_parser("run"); r.add_argument("goal"); r.add_argument("--task", default="")
     sub.add_parser("init")
+    # Phase 2 additions
+    ct = sub.add_parser("cognitive"); ct.add_argument("goal")
+    ct.add_argument("--workspace", default="."); ct.add_argument("--task", default="")
+    ct.add_argument("--max-iterations", type=int, default=20)
+    ct.add_argument("--approve", action="append", default=[])
+    ct.add_argument("--allow-shell", action="store_true"); ct.add_argument("--allow-network", action="store_true")
+    tl = sub.add_parser("tools"); tll = tl.add_subparsers(dest="sub", required=True)
+    tll.add_parser("list"); th = tll.add_parser("history"); th.add_argument("--task", default="")
+    sub.add_parser("benchmarks")
+    sub.add_parser("recover")
     args = p.parse_args(argv)
     try:
         if args.cmd == "init":
@@ -75,6 +85,19 @@ def main(argv=None):
                 _print(Evaluator(o.db, o.store, o.tm, o.sleep).run_all())
             elif args.cmd == "run":
                 _print(o.run_task(args.goal, task_id=args.task or None))
+            elif args.cmd == "cognitive":
+                _print(o.run_cognitive_task(args.goal, workspace=args.workspace, task_id=args.task or None,
+                      max_iterations=args.max_iterations, approved=args.approve,
+                      allow_shell=args.allow_shell, allow_network=args.allow_network))
+            elif args.cmd == "tools":
+                tools = o.make_tools(workspace=".")
+                if args.sub == "list": _print(tools.list())
+                elif args.sub == "history": _print(tools.history(task_id=args.task))
+            elif args.cmd == "benchmarks":
+                from nace.learning.benchmarks import run_all
+                _print(run_all())
+            elif args.cmd == "recover":
+                _print({"recovered_interrupted_sleep_runs": o._recovered_sleep, "integrity": o.db.integrity_check()})
         finally:
             o.close()
     except Exception as e:

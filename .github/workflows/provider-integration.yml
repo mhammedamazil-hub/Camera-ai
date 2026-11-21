@@ -1,0 +1,25 @@
+name: Provider integration (optional, manual)
+on: workflow_dispatch
+jobs:
+  ollama:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install Ollama + tiny model (deliberate, CI-only)
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama pull llama3.2:1b
+          ollama serve & sleep 5
+      - name: Real inference smoke (only passes with a real model)
+        run: |
+          python3 -c "
+          from nace.models.providers import OllamaProvider
+          p = OllamaProvider(model='llama3.2:1b')
+          assert p.available(), 'ollama not available'
+          out = p.generate('Reply with exactly: OK')
+          print('MODEL OUTPUT:', out[:200])
+          assert out.strip(), 'empty model output'
+          print('REAL MODEL INFERENCE: VERIFIED')
+          "

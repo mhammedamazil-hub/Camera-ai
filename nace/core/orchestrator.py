@@ -34,6 +34,7 @@ class Orchestrator:
         self.retriever = Retriever(self.store)
         self.triggers = TriggerMonitor(self.ctx, self.cfg.idle_sleep_seconds)
         self.session_events = []
+        self._recovered_sleep = self.sleep.recover_interrupted()
         self._set_identity_context()
     def _set_identity_context(self):
         self.ctx.set_section("identity", self.cfg.identity + "\n" + "\n".join(self.cfg.principles))
@@ -85,6 +86,14 @@ class Orchestrator:
                 "context": self.ctx.status(), "memory_counts": self.store.counts(),
                 "tasks": self.tm.list(), "sleep_history": self.sleep.history(3),
                 "integrity": self.db.integrity_check()}
+    def make_tools(self, workspace=".", **kw):
+        from nace.tools.framework import ToolRegistry
+        return ToolRegistry(db=self.db, workspace=workspace, **kw)
+    def run_cognitive_task(self, goal, workspace=".", task_id=None, project="", max_iterations=20, **tool_kw):
+        from nace.core.cognitive_loop import CognitiveLoop, LoopBudget
+        tools = self.make_tools(workspace=workspace, **tool_kw)
+        loop = CognitiveLoop(self, tools, LoopBudget(max_iterations=max_iterations))
+        return loop.run(goal, task_id=task_id, project=project)
     def close(self):
         # Shutdown trigger: checkpoint before exit.
         try:
