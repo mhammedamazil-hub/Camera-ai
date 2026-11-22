@@ -42,16 +42,28 @@ class NaceEntity:
     def speak(self, message, remember=False):
         o = self.orch
         if remember or "remember" in message.lower():
-            fact = message.split("remember", 1)[-1].strip(" that:") if "remember" in message.lower() else message
+            fact = message.split("remember", 1)[-1].strip() if "remember" in message.lower() else message
+            for pre in ("that ", "this ", "the ", ": "):
+                if fact.lower().startswith(pre): fact = fact[len(pre):]
             o.store.add(type="semantic", title=fact[:60], content=fact, confidence=1.0,
                         importance=0.9, source="entity-chat", provenance="user")
         recalled = o.retriever.search(message, limit=5)
-        mem_block = "\n".join(f"- {r['content'][:300]} (conf {r.get('confidence', 0.5):.2f}, source {r.get('provenance','?')})"
-                              for r in recalled)
-        system = (o.cfg.identity + "\n\nMEMORIES RETRIEVED FROM YOUR OWN PAST — these are real records, "
-                  "not training data. Use them if relevant. If a memory answers the question, state it. "
-                  "If you have no memory of something, say so honestly instead of inventing.\n" + (mem_block or "(no relevant memories)"))
-        reply = self.provider.generate(message, system=system)
+        # TinyLlama-1.1B parrots long instructions and ignores role-play system prompts.
+        # Proven-working format (tested): plain fact statements + Q/A wrapper, no system prompt.
+        facts = "\n".join(f"- {r['content'][:200]}" for r in recalled)
+        if facts:
+            prompt = f"What I know about you:\n{facts}\n\nQuestion: {message}\nAnswer:"
+        else:
+            prompt = f"Question: {message}\nAnswer:"
+        try:
+            reply = self.provider.generate(prompt)   # no system prompt: model answers instead of echoing
+        except Exception as e:
+            reply = f"(inference failed: {e})"
+        # Memory answers are authoritative at this model size: append the grounded fact
+        if recalled and any(k in message.lower() for k in ("what", "who", "which", "where", "when", "how", "my ", "do you")):
+            grounded = recalled[0]["content"][:250]
+            if grounded.lower()[:20] not in reply.lower()[:120]:
+                reply = f"{reply}\n\nFrom memory: {grounded}"
         o.record_event("entity-chat", f"user: {message} | reply: {reply[:600]}", kind="observation")
         return {"reply": reply, "recalled": recalled}
     # ---------- sleep: fused, not bolted on ----------

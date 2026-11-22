@@ -30,9 +30,14 @@ class GGUFProvider(BaseProvider):
         llm = self._load()
         msgs = [{"role": m["role"], "content": m.get("content", "")} for m in messages if m.get("role") in ("system", "user", "assistant")]
         try:
-            out = llm.create_chat_completion(messages=msgs, max_tokens=min(400, self.context_length // 2),
-                                             temperature=self.temperature)
-            return {"content": out["choices"][0]["message"]["content"].strip(), "tool_calls": []}
+            out = llm.create_chat_completion(messages=msgs, max_tokens=min(120, self.context_length // 4),
+                                             temperature=self.temperature,
+                                             stop=["\nUser:", "\nQ:", "\n\n\n"])
+            txt = out["choices"][0]["message"]["content"].strip()
+            # small models sometimes echo the prompt's "Question:"/"Answer:" scaffolding
+            for junk in ("Question:", "Answer:", "What I know about you:"):
+                if txt.startswith(junk): txt = txt[len(junk):].strip()
+            return {"content": txt, "tool_calls": []}
         except Exception as e:
             raise ProviderError(f"inference failed: {e}") from e
     def generate(self, prompt, system=""):
